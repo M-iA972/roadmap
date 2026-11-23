@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche sprint · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('sprints');
+
+const s = sprintById(idParam()) || activeSprint();
+document.title = `${s.goal} · Roadmap`;
+const features = DB.features.filter((f) => f.sprintId === s.id);
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="sprints.html" aria-label="Tous les sprints">${icon('back')}</a>
+      <a class="btn btn-ghost" href="sprints.html">Tous les sprints</a>
+    </div>
+    <a class="btn btn-secondary" href="sprint-form.html?id=${s.id}">${icon('edit')} Modifier</a>
+  </div>
+
+  <section class="card section ${s.status === 'active' ? 'card-dark' : ''}">
+    <div class="eyebrow muted">Sprint</div>
+    <h1 style="margin:8px 0 12px">${esc(s.goal)}</h1>
+    <div class="badges" style="margin-bottom:16px">${sprintStatusBadge(s.status)}</div>
+    <p>${icon('calendar')} Du <strong>${fmtDate(s.start)}</strong> au <strong>${fmtDate(s.end)}</strong></p>
+    <p class="small" style="margin-top:8px">Créé le ${fmtDate(s.createdAt)}</p>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Features du sprint</h2>
+      <span class="muted">${features.length} feature${features.length > 1 ? 's' : ''}</span>
+    </div>
+    ${featureTable(features, ['module', 'assignee', 'status', 'priority'])}
+  </section>`;
+</script>
+</body>
+</html>

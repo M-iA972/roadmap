@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Équipe · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('equipe');
+
+const countOf = (m) => DB.features.filter((f) => f.assigneeId === m.id).length;
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div>
+      <h1>Équipe</h1>
+      <p class="sub muted">${DB.members.length} membres</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="invite">${icon('mail')} Inviter un membre</button>
+  </div>
+
+  <div class="table" style="--cols: 48px minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) 160px">
+    <div class="thead"><span>Photo</span><span>Prénom</span><span>Nom</span><span>Email</span><span>Features assignées</span></div>
+    ${DB.members.map((m) => `
+      <div class="trow" data-href="profil.html?id=${m.id}">
+        <a href="profil.html?id=${m.id}">${avatar(m)}</a>
+        <a class="t-title" href="profil.html?id=${m.id}">${esc(m.firstName)}</a>
+        <span class="t-title">${esc(m.lastName)}</span>
+        <span class="small">${esc(m.email)}</span>
+        <span class="small">${countOf(m)} feature${countOf(m) > 1 ? 's' : ''}</span>
+      </div>`).join('')}
+  </div>`;
+
+// Invitation : un seul champ email. Rien n'est envoyé.
+$('#invite').addEventListener('click', () => {
+  openModal({
+    title: 'Inviter un membre',
+    okLabel: 'Envoyer l\'invitation',
+    body: `
+      <p style="margin-bottom:16px">La personne recevra un e-mail avec un lien pour créer son compte.</p>
+      <div class="field" id="m-email">
+        <label for="invite-email">Email</label>
+        <input class="input" id="invite-email" type="email" placeholder="prenom.nom@roadmap.app">
+        <div class="err-msg">Saisissez une adresse email valide.</div>
+      </div>`,
+    onOk: (o) => {
+      const email = $('#invite-email', o).value.trim();
+      const known = DB.members.some((m) => m.email === email);
+      setError($('#m-email', o), !isEmail(email) || known);
+      $('#m-email .err-msg', o).textContent = known ? 'Cette personne fait déjà partie de l\'équipe.' : 'Saisissez une adresse email valide.';
+      if (!isEmail(email) || known) return false;
+      toast(`Invitation envoyée à ${email}`);
+    },
+  });
+});
+</script>
+</body>
+</html>

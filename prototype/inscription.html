@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Créer mon compte · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="auth" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+// Écran ouvert depuis le lien de l'e-mail d'invitation (invitation fictive).
+const invitation = { email: 'camille.durand@roadmap.app', invitedBy: member(1) };
+
+$('#app').innerHTML = `
+  <div class="card auth-card">
+    <span class="logo"><span class="logo-mark"></span>Roadmap</span>
+    <h1>Créer mon compte</h1>
+    <div class="invite-banner note">
+      ${avatar(invitation.invitedBy)}
+      <span><strong>${esc(fullName(invitation.invitedBy))}</strong> vous invite à rejoindre l'équipe.<br>
+      Votre compte sera créé pour <strong>${esc(invitation.email)}</strong>.</span>
+    </div>
+
+    <form id="form" novalidate>
+      <div class="field" id="f-first">
+        <label for="first">Prénom</label>
+        <input class="input" id="first" autocomplete="given-name" placeholder="Camille">
+        <div class="err-msg">Saisissez votre prénom.</div>
+      </div>
+      <div class="field" id="f-last">
+        <label for="last">Nom</label>
+        <input class="input" id="last" autocomplete="family-name" placeholder="Durand">
+        <div class="err-msg">Saisissez votre nom.</div>
+      </div>
+      ${photoField(null)}
+      <div class="field" id="f-password">
+        <label for="password">Mot de passe</label>
+        <input class="input" id="password" type="password" autocomplete="new-password">
+        <div class="help">8 caractères minimum.</div>
+        <div class="err-msg">Le mot de passe doit faire au moins 8 caractères.</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Rejoindre l'équipe</button>
+    </form>
+  </div>`;
+
+bindPhotoField($('.photo-field-wrap'));
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const noFirst = !$('#first').value.trim();
+  const noLast = !$('#last').value.trim();
+  const shortPwd = $('#password').value.length < 8;
+  setError($('#f-first'), noFirst);
+  setError($('#f-last'), noLast);
+  setError($('#f-password'), shortPwd);
+  $('#f-password .help').hidden = shortPwd;
+  if (noFirst || noLast || shortPwd) return;
+  goWithMessage('index.html', 'Bienvenue dans l\'équipe !');
+});
+$('#first').focus();
+</script>
+</body>
+</html>

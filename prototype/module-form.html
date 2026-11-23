@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nouveau module · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('modules');
+
+// ?id=… : même formulaire, déjà rempli, pour modifier un module
+const m = moduleById(idParam());
+const editing = !!m;
+const v = m || { name: '', description: '', color: '#E8308C' };
+if (editing) document.title = 'Modifier le module · Roadmap';
+
+// Couleurs proposées : celles du design system
+const COLORS = [
+  ['#E8308C', 'Rose fuchsia'], ['#7B5CFA', 'Violet électrique'], ['#FFC93C', 'Jaune soleil'],
+  ['#2EC4B6', 'Turquoise'], ['#6CB8FF', 'Bleu ciel'], ['#F2545B', 'Rouge cerise'], ['#1E1B2E', 'Noir doux'],
+];
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="modules.html" aria-label="Retour aux modules">${icon('back')}</a>
+      <div>
+        <h1>${editing ? 'Modifier le module' : 'Nouveau module'}</h1>
+        <p class="sub muted">${editing ? esc(m.name) : 'Un module regroupe les features d\'une même zone de l\'app.'}</p>
+      </div>
+    </div>
+  </div>
+
+  <form class="card form-card" id="form" novalidate>
+    <div class="form-grid">
+      <div class="field full" id="f-name">
+        <label for="name">Nom</label>
+        <input class="input" id="name" value="${esc(v.name)}" placeholder="Ex. : Intégrations">
+        <div class="err-msg">Donnez un nom au module.</div>
+      </div>
+      <div class="field full">
+        <label for="description">Description</label>
+        <textarea class="input" id="description" placeholder="Ce que couvre ce module.">${esc(v.description)}</textarea>
+      </div>
+      <div class="field full">
+        <span class="label">Couleur</span>
+        <div class="swatches" role="radiogroup" aria-label="Couleur">
+          ${COLORS.map(([hex, label]) => `
+            <label title="${label}">
+              <input type="radio" name="color" value="${hex}" ${hex === v.color ? 'checked' : ''} aria-label="${label}">
+              <span class="mdot" style="background:${hex}"></span>
+            </label>`).join('')}
+        </div>
+        <div class="help">La pastille s'affiche devant le nom du module partout dans l'app.</div>
+      </div>
+    </div>
+
+    <div class="form-foot">
+      <button type="button" class="btn btn-ghost" id="cancel">Annuler</button>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>`;
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const noName = !$('#name').value.trim();
+  setError($('#f-name'), noName);
+  if (noName) return;
+  goWithMessage('modules.html', editing ? 'Module modifié' : 'Module ajouté');
+});
+$('#cancel').addEventListener('click', () => goWithMessage('modules.html', editing ? 'Modification annulée' : 'Ajout annulé'));
+</script>
+</body>
+</html>

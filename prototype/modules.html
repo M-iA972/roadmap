@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modules · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('modules');
+
+let modules = DB.modules.slice();
+const countOf = (m) => DB.features.filter((f) => f.moduleId === m.id).length;
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div>
+      <h1>Modules</h1>
+      <p class="sub muted">Les grandes zones fonctionnelles de l'app.</p>
+    </div>
+    <a class="btn btn-primary" href="module-form.html">${icon('plus')} Nouveau module</a>
+  </div>
+  <div id="list"></div>`;
+
+function render() {
+  $('#list').innerHTML = `
+    <div class="table" style="--cols: 48px minmax(0,1fr) minmax(0,2.2fr) 110px 232px">
+      <div class="thead"><span>Couleur</span><span>Nom</span><span>Description</span><span>Features</span><span></span></div>
+      ${modules.map((m) => `
+        <div class="trow" data-href="module.html?id=${m.id}">
+          ${moduleDot(m, 'mdot-lg')}
+          <a class="t-title" href="module.html?id=${m.id}">${esc(m.name)}</a>
+          <span class="cell-desc">${esc(m.description)}</span>
+          <span class="small">${countOf(m)} feature${countOf(m) > 1 ? 's' : ''}</span>
+          <div class="cell-actions">
+            <a class="btn btn-secondary btn-sm" href="module-form.html?id=${m.id}">${icon('edit')} Modifier</a>
+            <button class="btn btn-danger btn-sm" data-delete="${m.id}">${icon('trash')} Supprimer</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+$('#list').addEventListener('click', (e) => {
+  const del = e.target.closest('[data-delete]');
+  if (!del) return;
+  const m = moduleById(Number(del.dataset.delete));
+  const n = countOf(m);
+  // Suppression possible seulement si le module n'a plus aucune feature
+  if (n > 0) {
+    confirmBox({
+      title: 'Suppression impossible',
+      text: `Le module « ${esc(m.name)} » contient encore ${n} feature${n > 1 ? 's' : ''}. Déplacez-les ou supprimez-les d'abord.`,
+      infoOnly: true,
+    });
+    return;
+  }
+  confirmBox({
+    title: 'Supprimer ce module ?',
+    text: `Le module « ${esc(m.name)} » ne contient aucune feature. Il sera supprimé définitivement.`,
+    onOk: () => { modules = modules.filter((x) => x.id !== m.id); render(); toast('Module supprimé'); },
+  });
+});
+
+render();
+</script>
+</body>
+</html>

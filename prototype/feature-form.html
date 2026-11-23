@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nouvelle feature · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('dashboard');
+
+// ?id=… : même formulaire, déjà rempli, pour modifier une feature
+const f = featureById(idParam());
+const editing = !!f;
+// Une nouvelle feature part en « Backlog », non assignée, sans sprint.
+const v = f || { title: '', description: '', priority: 'medium', effort: 3, users: '', moduleId: '' };
+if (editing) document.title = 'Modifier la feature · Roadmap';
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="index.html" aria-label="Retour au Dashboard">${icon('back')}</a>
+      <div>
+        <h1>${editing ? 'Modifier la feature' : 'Nouvelle feature'}</h1>
+        <p class="sub muted">${editing ? esc(f.title) : 'Décrivez l\'idée : elle partira dans le backlog.'}</p>
+      </div>
+    </div>
+  </div>
+
+  <form class="card form-card" id="form" novalidate>
+    <div class="form-grid">
+      <div class="field full" id="f-title">
+        <label for="title">Titre</label>
+        <input class="input" id="title" value="${esc(v.title)}" placeholder="Ex. : Export des données en CSV">
+        <div class="err-msg">Donnez un titre à la feature.</div>
+      </div>
+
+      <div class="field full">
+        <label for="description">Description</label>
+        <textarea class="input" id="description" placeholder="Le besoin, pour qui, et ce qu'on veut obtenir.">${esc(v.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label for="priority">Priorité</label>
+        <select class="input" id="priority">${options(Object.entries(PRIORITY), v.priority)}</select>
+      </div>
+
+      <div class="field">
+        <label for="effort">Effort</label>
+        <select class="input" id="effort">${options(EFFORTS.map((n) => [n, `${n} point${n > 1 ? 's' : ''}`]), v.effort)}</select>
+      </div>
+
+      <div class="field">
+        <label for="users">Nombre d'utilisateurs impactés</label>
+        <input class="input" id="users" type="number" min="0" step="100" value="${v.users}" placeholder="Ex. : 2500">
+      </div>
+
+      <div class="field" id="f-module">
+        <label for="module">Module</label>
+        <select class="input" id="module">
+          <option value="">Choisir un module</option>
+          ${options(DB.modules.map((m) => [m.id, m.name]), v.moduleId)}
+        </select>
+        <div class="err-msg">Choisissez un module.</div>
+      </div>
+
+      ${editing ? `
+      <div class="field">
+        <label for="assignee">Personne assignée</label>
+        <select class="input" id="assignee">
+          <option value="">Non assignée</option>
+          ${options(DB.members.map((m) => [m.id, fullName(m)]), v.assigneeId)}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="status">Statut</label>
+        <select class="input" id="status">${options(Object.entries(STATUS), v.status)}</select>
+      </div>
+
+      <div class="field full">
+        <label for="sprint">Sprint <span class="muted">(facultatif)</span></label>
+        <select class="input" id="sprint">
+          <option value="">Aucun — la feature reste dans le backlog</option>
+          ${options(DB.sprints.filter((s) => s.status !== 'done' || s.id === v.sprintId).map((s) => [s.id, `${s.goal} — ${SPRINT_STATUS[s.status]}`]), v.sprintId)}
+        </select>
+        <div class="help">Laissez vide pour garder la feature dans le backlog.</div>
+      </div>
+      ` : `
+      <details class="advanced full" id="advanced">
+        <summary>${icon('chevron')} Options avancées <span class="small">Personne assignée et sprint</span></summary>
+        <div class="adv-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="assignee">Personne assignée</label>
+              <select class="input" id="assignee">
+                <option value="">Non assignée</option>
+                ${options(DB.members.map((m) => [m.id, fullName(m)]))}
+              </select>
+            </div>
+            <div class="field">
+              <label for="sprint">Sprint</label>
+              <select class="input" id="sprint">
+                <option value="">Aucun — reste dans le backlog</option>
+                ${options(DB.sprints.filter((s) => s.status !== 'done').map((s) => [s.id, `${s.goal} — ${SPRINT_STATUS[s.status]}`]))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </details>
+      <div class="full note">${icon('info')}<span>Sans options avancées, la feature est créée avec le statut <strong>Backlog</strong>, sans personne assignée ni sprint. Si vous choisissez un sprint, elle passe au statut <strong>À faire</strong>.</span></div>
+      `}
+    </div>
+
+    <div class="form-foot">
+      <button type="button" class="btn btn-ghost" id="cancel">Annuler</button>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>`;
+
+// Rien n'est enregistré : on vérifie juste les champs obligatoires puis on revient au Dashboard.
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const noTitle = !$('#title').value.trim();
+  const noModule = !$('#module').value;
+  setError($('#f-title'), noTitle);
+  setError($('#f-module'), noModule);
+  if (noTitle || noModule) return;
+  goWithMessage('index.html', editing ? 'Feature modifiée' : 'Feature ajoutée');
+});
+$('#cancel').addEventListener('click', () => goWithMessage('index.html', editing ? 'Modification annulée' : 'Ajout annulé'));
+</script>
+</body>
+</html>

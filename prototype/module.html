@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche module · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('modules');
+
+const m = moduleById(idParam()) || DB.modules[0];
+document.title = `${m.name} · Roadmap`;
+const features = DB.features.filter((f) => f.moduleId === m.id);
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="modules.html" aria-label="Retour aux modules">${icon('back')}</a>
+      <a class="btn btn-ghost" href="modules.html">Tous les modules</a>
+    </div>
+  </div>
+
+  <section class="card section">
+    <div class="hero">
+      ${moduleDot(m, 'mdot-xl')}
+      <div>
+        <h1>${esc(m.name)}</h1>
+        <p class="small">Créé le ${fmtDate(m.createdAt)}</p>
+      </div>
+    </div>
+    <p class="desc">${esc(m.description)}</p>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Features du module</h2>
+      <span class="muted">${features.length} feature${features.length > 1 ? 's' : ''}</span>
+    </div>
+    ${featureTable(features, ['sprint', 'status', 'priority'])}
+  </section>`;
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('dashboard');
+
+// Copie locale : suppressions et assignations ne vivent que le temps de la page.
+let features = DB.features.map((f) => ({ ...f }));
+const featureLocal = (id) => features.find((f) => f.id === id);
+
+// Filtres : portée (toutes / en sprint / backlog) + module
+let scope = ['sprint', 'backlog'].includes(param('filter')) ? param('filter') : 'all';
+let moduleFilter = Number(param('module')) || null;
+const sprint = activeSprint();
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="sub muted">Toutes les features de la roadmap, en sprint ou dans le backlog.</p>
+    </div>
+  </div>
+
+  <div class="dash-top">
+    <!-- Section 2 : sprint en cours -->
+    <section class="card card-dark sprint-now" id="sprint-now"></section>
+
+    <!-- Section 3 : nouvelle feature -->
+    <section class="card new-card">
+      <h3>Une nouvelle idée ?</h3>
+      <p class="small">Elle part dans le backlog, vous l'assignerez ensuite.</p>
+      <a class="btn btn-primary btn-block" href="feature-form.html">${icon('plus')} Nouvelle feature</a>
+    </section>
+  </div>
+
+  <!-- Section 4 : action requise -->
+  <section class="section">
+    <div class="section-head">
+      <h2>Action requise <span class="count-badge" id="action-count"></span></h2>
+      <span class="muted">Features du backlog sans personne assignée</span>
+    </div>
+    <div id="action"></div>
+  </section>
+
+  <!-- Section 1 : tableau des features -->
+  <section>
+    <div class="section-head">
+      <h2>Features</h2>
+      <span class="muted" id="count"></span>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div id="table"></div>
+  </section>`;
+
+/* ---------- Sprint en cours ---------- */
+function renderSprint() {
+  const list = features.filter((f) => f.sprintId === sprint.id);
+  const done = list.filter((f) => f.status === 'done').length;
+  $('#sprint-now').innerHTML = `
+    <div class="eyebrow muted">Sprint en cours</div>
+    <h3><a href="sprint.html?id=${sprint.id}">${esc(sprint.goal)}</a></h3>
+    <div class="meta">${sprintStatusBadge(sprint.status)}<span class="small">${icon('calendar')}Du ${fmtDate(sprint.start)} au ${fmtDate(sprint.end)}</span></div>
+    <div class="foot">
+      <div>
+        <p class="small">${done} / ${list.length} features terminées</p>
+        <div class="progress"><span style="width:${list.length ? Math.round(done / list.length * 100) : 0}%"></span></div>
+      </div>
+      <a class="btn btn-secondary" href="sprints.html">Tous les sprints ${icon('arrow')}</a>
+    </div>`;
+}
+
+/* ---------- Action requise : backlog + non assignée ---------- */
+function renderAction() {
+  const list = features.filter((f) => !f.sprintId && !f.assigneeId);
+  $('#action-count').textContent = list.length;
+  $('#action-count').hidden = !list.length;
+  if (!list.length) {
+    $('#action').innerHTML = '<div class="empty">Rien à traiter : toutes les features du backlog ont une personne assignée.</div>';
+    return;
+  }
+  $('#action').innerHTML = `
+    <div class="table" style="--cols: minmax(0,2fr) minmax(0,1fr) 130px 150px">
+      <div class="thead"><span>Feature</span><span>Module</span><span>Priorité</span><span></span></div>
+      ${list.map((f) => `
+        <div class="trow action-row" data-href="feature.html?id=${f.id}">
+          <a class="t-title" href="feature.html?id=${f.id}">${esc(f.title)}</a>
+          <div>${moduleTag(moduleById(f.moduleId))}</div>
+          <div>${priorityBadge(f.priority)}</div>
+          <div class="cell-actions"><button class="btn btn-primary btn-sm" data-assign="${f.id}">${icon('users')} Assigner</button></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function openAssign(f) {
+  const sprints = DB.sprints.filter((s) => s.status !== 'done');
+  openModal({
+    title: 'Assigner la feature',
+    okLabel: 'Assigner',
+    body: `
+      <p class="lead">${esc(f.title)}</p>
+      <div class="field" id="m-person">
+        <label for="m-assignee">Personne</label>
+        <select class="input" id="m-assignee">
+          <option value="">Choisir une personne</option>
+          ${options(DB.members.map((m) => [m.id, fullName(m)]))}
+        </select>
+        <div class="err-msg">Choisissez une personne.</div>
+      </div>
+      <div class="field" id="m-sprint">
+        <label for="m-sprint-select">Sprint</label>
+        <select class="input" id="m-sprint-select">
+          <option value="">Choisir un sprint</option>
+          ${options(sprints.map((s) => [s.id, `${s.goal} — ${SPRINT_STATUS[s.status]}`]))}
+        </select>
+        <div class="err-msg">Choisissez un sprint.</div>
+      </div>`,
+    onOk: (o) => {
+      const person = Number($('#m-assignee', o).value);
+      const sp = Number($('#m-sprint-select', o).value);
+      setError($('#m-person', o), !person);
+      setError($('#m-sprint', o), !sp);
+      if (!person || !sp) return false;
+      // La feature quitte le backlog : elle passe « À faire » dans le sprint choisi.
+      Object.assign(f, { assigneeId: person, sprintId: sp, status: 'todo' });
+      renderAll();
+      toast('Feature assignée');
+    },
+  });
+}
+
+/* ---------- Filtres : portée + menu déroulant des modules ---------- */
+function renderFilters() {
+  const scopes = [['all', 'Toutes'], ['sprint', 'En sprint'], ['backlog', 'Backlog']];
+  const current = moduleById(moduleFilter);
+  $('#filters').innerHTML = `
+    ${scopes.map(([k, label]) => `<button class="chip ${scope === k ? 'on' : ''}" data-scope="${k}">${label}</button>`).join('')}
+    <span class="sep"></span>
+    <div class="dropdown" id="mod-dd">
+      <button type="button" class="chip dd-btn ${current ? 'on' : ''}" aria-haspopup="listbox" aria-expanded="false">
+        ${current ? `${moduleDot(current)}${esc(current.name)}` : 'Tous les modules'} ${icon('chevron')}
+      </button>
+      <div class="dd-panel" hidden>
+        <div class="search">${icon('search')}<input class="input dd-search" type="search" placeholder="Rechercher un module…" aria-label="Rechercher un module"></div>
+        <div class="dd-list" role="listbox"></div>
+      </div>
+    </div>`;
+  renderModuleList('');
+}
+
+function renderModuleList(query) {
+  const q = normalize(query.trim());
+  const count = (id) => features.filter((f) => f.moduleId === id).length;
+  const mods = DB.modules.filter((m) => normalize(m.name).includes(q));
+  const item = (id, label, dot, n) => `
+    <button type="button" class="dd-item ${moduleFilter === id ? 'on' : ''}" role="option" data-module="${id ?? ''}">
+      ${dot}${label}${n !== null ? `<span class="count">${n}</span>` : ''}${moduleFilter === id ? `<span class="check-end">${icon('check')}</span>` : ''}
+    </button>`;
+  $('#mod-dd .dd-list').innerHTML =
+    (q ? '' : item(null, 'Tous les modules', '', null)) +
+    (mods.length
+      ? mods.map((m) => item(m.id, esc(m.name), moduleDot(m), count(m.id))).join('')
+      : '<div class="dd-empty">Aucun module trouvé.</div>');
+}
+
+function toggleDropdown(open) {
+  const panel = $('#mod-dd .dd-panel');
+  panel.hidden = !open;
+  $('#mod-dd .dd-btn').setAttribute('aria-expanded', open);
+  if (open) $('#mod-dd .dd-search').focus();
+}
+
+/* ---------- Tableau des features ---------- */
+function renderTable() {
+  const list = features.filter((f) =>
+    (scope === 'all' || (scope === 'sprint' ? f.sprintId : !f.sprintId)) &&
+    (!moduleFilter || f.moduleId === moduleFilter));
+  $('#count').textContent = `${list.length} feature${list.length > 1 ? 's' : ''}`;
+
+  if (!list.length) { $('#table').innerHTML = '<div class="empty">Aucune feature ne correspond à ce filtre.</div>'; return; }
+
+  $('#table').innerHTML = `
+    <div class="table" style="--cols: minmax(0,2fr) minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1.3fr) 232px">
+      <div class="thead"><span>Feature</span><span>Sprint</span><span>Module</span><span>Assignée</span><span></span></div>
+      ${list.map((f) => `
+        <div class="trow" data-href="feature.html?id=${f.id}">
+          <a class="t-title" href="feature.html?id=${f.id}">${esc(f.title)}</a>
+          <div>${sprintLink(f.sprintId)}</div>
+          <div>${moduleTag(moduleById(f.moduleId))}</div>
+          <div>${personLink(f.assigneeId)}</div>
+          <div class="cell-actions">
+            <a class="btn btn-secondary btn-sm" href="feature-form.html?id=${f.id}">${icon('edit')} Modifier</a>
+            <button class="btn btn-danger btn-sm" data-delete="${f.id}">${icon('trash')} Supprimer</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderAll() { renderSprint(); renderAction(); renderFilters(); renderTable(); }
+
+/* ---------- Clics ---------- */
+$('#app').addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.closest('.dd-btn')) { toggleDropdown($('#mod-dd .dd-panel').hidden); return; }
+  if (t.closest('.dd-search')) return;
+
+  const scopeBtn = t.closest('[data-scope]');
+  const modItem = t.closest('[data-module]');
+  const backlog = t.closest('[data-backlog]');
+  const del = t.closest('[data-delete]');
+  const assign = t.closest('[data-assign]');
+
+  if (scopeBtn) scope = scopeBtn.dataset.scope;
+  else if (modItem) moduleFilter = Number(modItem.dataset.module) || null;
+  else if (backlog) { e.preventDefault(); scope = 'backlog'; }
+  else if (assign) { openAssign(featureLocal(Number(assign.dataset.assign))); return; }
+  else if (del) {
+    const f = featureLocal(Number(del.dataset.delete));
+    confirmBox({
+      title: 'Supprimer cette feature ?',
+      text: `« ${esc(f.title)} » et ses commentaires seront supprimés définitivement.`,
+      onOk: () => { features = features.filter((x) => x.id !== f.id); renderAll(); toast('Feature supprimée'); },
+    });
+    return;
+  } else return;
+  renderFilters(); renderTable();
+});
+
+// Recherche dans le menu des modules
+$('#app').addEventListener('input', (e) => {
+  if (e.target.matches('.dd-search')) renderModuleList(e.target.value);
+});
+$('#app').addEventListener('keydown', (e) => {
+  if (!e.target.matches('.dd-search')) return;
+  if (e.key === 'Escape') toggleDropdown(false);
+  if (e.key === 'Enter') { e.preventDefault(); $('#mod-dd [data-module]')?.click(); } // premier résultat
+});
+// Clic à l'extérieur : on ferme le menu
+document.addEventListener('click', (e) => {
+  if ($('#mod-dd') && !e.target.closest('#mod-dd')) toggleDropdown(false);
+});
+
+renderAll();
+</script>
+</body>
+</html>

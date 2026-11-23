@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/*
+  Design system de Roadmap, traduit en tokens Tailwind CSS v4.
+  Source : docs/design-system.md
+
+  Chaque variable déclarée dans @theme crée des classes Tailwind :
+    --color-rose-fuchsia   → bg-rose-fuchsia, text-rose-fuchsia, border-rose-fuchsia…
+    --radius-carte         → rounded-carte
+    --shadow-carte         → shadow-carte
+    --spacing-carte        → p-carte, gap-carte, m-carte…
+    --text-titre-page      → text-titre-page (taille + graisse)
+*/
+
+@theme {
+  /* ---------- Couleurs principales ---------- */
+  --color-rose-fuchsia: #E8308C;       /* Couleur principale : boutons principaux, lien actif du menu, éléments sélectionnés */
+  --color-rose-fuchsia-fonce: #D01F79; /* Survol du bouton principal */
+  --color-rose-clair: #FCE4F0;         /* Survol, fond des éléments sélectionnés */
+  --color-violet-tres-clair: #F3EFFF;  /* Survol du bouton secondaire */
+  --color-violet-electrique: #7B5CFA;  /* Couleur secondaire : boutons secondaires, liens */
+  --color-jaune-soleil: #FFC93C;       /* Accents, alertes */
+  --color-turquoise: #2EC4B6;          /* Succès, « terminé » */
+  --color-bleu-ciel: #6CB8FF;          /* Information, « en cours » */
+  --color-rouge-cerise: #F2545B;       /* Erreurs, suppression */
+  --color-rouge-cerise-fonce: #E0434A; /* Survol du bouton Danger */
+  --color-noir-doux: #1E1B2E;          /* Texte principal, cartes contrastées (sprint en cours) */
+  --color-gris-texte: #6E6A80;         /* Texte secondaire (dates, descriptions) */
+  --color-gris-bordure: #E6E1F0;       /* Bordures, séparateurs */
+  --color-fond: #F7F3FF;               /* Fond des pages */
+  --color-blanc: #FFFFFF;              /* Fond des cartes et des champs */
+
+  /* ---------- Avatar sans photo : initiales sur fond violet clair ----------
+     Mêmes couleurs que le badge « Planification ». */
+  --color-violet-clair: #EDE7FF;
+  --color-violet-clair-texte: #5A3FD6;
+
+  /* ---------- Statuts des features (colonne status) ----------
+     Pour chaque statut : le fond du badge, puis la couleur du texte (-texte).
+     Valeur en base → nom du token : backlog → backlog, todo → a-faire,
+     in_progress → en-cours, done → termine, cancelled → annule. */
+  --color-statut-backlog: #ECEAF2;
+  --color-statut-backlog-texte: #6E6A80;
+  --color-statut-a-faire: #FFF1C9;
+  --color-statut-a-faire-texte: #8A6200;
+  --color-statut-en-cours: #DCEEFF;
+  --color-statut-en-cours-texte: #1F6FC4;
+  --color-statut-termine: #D6F5F1;
+  --color-statut-termine-texte: #13877C;
+  --color-statut-annule: #F3F1F6;
+  --color-statut-annule-texte: #9B97A8; /* à utiliser avec line-through (texte barré) */
+
+  /* ---------- Statuts des sprints ----------
+     Même principe : le fond du badge, puis la couleur du texte (-texte). */
+  --color-sprint-planification: #EDE7FF;
+  --color-sprint-planification-texte: #5A3FD6;
+  --color-sprint-actif: #E8308C;
+  --color-sprint-actif-texte: #FFFFFF;
+  --color-sprint-termine: #D6F5F1;
+  --color-sprint-termine-texte: #13877C;
+
+  /* ---------- Priorités des features (colonne priority) ----------
+     Valeur en base → nom du token : critical → critique, high → haute,
+     medium → moyenne, low → basse, nice_to_have → bonus. */
+  --color-priorite-critique: #F2545B;
+  --color-priorite-critique-texte: #FFFFFF;
+  --color-priorite-haute: #FFE0D1;
+  --color-priorite-haute-texte: #D2541B;
+  --color-priorite-moyenne: #FFF1C9;
+  --color-priorite-moyenne-texte: #8A6200;
+  --color-priorite-basse: #DCEEFF;
+  --color-priorite-basse-texte: #1F6FC4;
+  --color-priorite-bonus: #ECEAF2;
+  --color-priorite-bonus-texte: #6E6A80;
+
+  /* ---------- Typographie ----------
+     Police : Urbanist pour tout le texte (chargée dans app/layout.tsx, voir @theme inline plus bas).
+     Chaque taille embarque sa graisse : text-titre-page donne 28 px en gras. */
+  --text-titre-page: 28px;          /* Titre de page */
+  --text-titre-page--font-weight: 700;
+  --text-titre-section: 20px;       /* Titre de section */
+  --text-titre-section--font-weight: 700;
+  --text-titre-carte: 16px;         /* Titre de carte */
+  --text-titre-carte--font-weight: 600;
+  --text-courant: 15px;             /* Texte courant */
+  --text-courant--font-weight: 500;
+  --text-petit: 13px;               /* Petit texte (dates, aides) — à combiner avec text-gris-texte */
+  --text-libelle: 13px;             /* Libellé de champ et badges : 13 px demi-gras */
+  --text-libelle--font-weight: 600;
+
+  /* ---------- Espacements ----------
+     L'échelle de base 4 px (4, 8, 12, 16, 24, 32, 48) est déjà celle de Tailwind :
+     p-1 = 4 px, p-2 = 8 px, p-3 = 12 px, p-4 = 16 px, p-6 = 24 px, p-8 = 32 px, p-12 = 48 px.
+     On ajoute des noms pour les espacements qui ont un rôle précis. */
+  --spacing-carte: 24px;            /* Intérieur des cartes */
+  --spacing-entre-cartes: 16px;     /* Espace entre deux cartes */
+  --spacing-entre-lignes: 8px;      /* Espace entre deux lignes d'un tableau */
+  --spacing-entre-sections: 32px;   /* Espace entre deux sections */
+  --spacing-page: 32px;             /* Marges de la page */
+  --spacing-page-mobile: 16px;      /* Marges de la page sur mobile */
+
+  /* ---------- Arrondis ---------- */
+  --radius-carte: 28px;             /* Cartes, sections et fenêtres de confirmation */
+  --radius-zone-texte: 20px;        /* Zones de texte (description, commentaire) */
+  --radius-pilule: 999px;           /* Boutons, badges, champs, filtres, options des menus déroulants */
+  --radius-case: 8px;               /* Cases à cocher */
+  /* Menus déroulants et blocs repliables : même arrondi que les cartes → rounded-carte */
+  /* Avatars et pastilles de module : ronds → classe Tailwind rounded-full */
+
+  /* ---------- Ombre ----------
+     Une seule ombre douce : cartes, menus déroulants et message de confirmation. */
+  --shadow-carte: 0 8px 24px rgba(30, 27, 46, 0.06);
+}
+
+/*
+  « inline » : la valeur reste une référence à la variable --font-urbanist,
+  que next/font pose sur la balise <html> (voir app/layout.tsx).
+  font-sans est la police par défaut de Tailwind : tout le texte passe en Urbanist.
+*/
+@theme inline {
+  --font-sans: var(--font-urbanist), system-ui, sans-serif;
+}
+
+/* ---------- Styles de base de toutes les pages ---------- */
+@layer base {
+  body {
+    background-color: var(--color-fond);
+    color: var(--color-noir-doux);
+    font-family: var(--font-sans);
+    font-size: var(--text-courant);
+    font-weight: var(--text-courant--font-weight);
+  }
+}

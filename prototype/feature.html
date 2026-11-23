@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche feature · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('dashboard');
+
+const f = { ...(featureById(idParam()) || DB.features[3]) }; // copie locale : rien n'est enregistré
+const mod = moduleById(f.moduleId);
+document.title = `${f.title} · Roadmap`;
+
+// Commentaires du plus ancien au plus récent (copie locale : rien n'est enregistré)
+let comments = DB.comments.filter((c) => c.featureId === f.id).map((c) => ({ ...c }))
+  .sort((a, b) => a.date.localeCompare(b.date));
+let editingId = null; // commentaire en cours de modification
+let nextId = 1000;
+const me = member(DB.currentUserId);
+
+const commentHtml = (c) => {
+  const a = member(c.authorId);
+  const editing = c.id === editingId;
+  return `
+    <div class="comment" data-id="${c.id}">
+      <a href="profil.html?id=${a.id}">${avatar(a)}</a>
+      <div class="comment-body">
+        <div class="comment-head">
+          <strong>${esc(fullName(a))}</strong>
+          <span class="small">${fmtDateTime(c.date)}${c.edited ? ' · modifié' : ''}</span>
+          ${editing ? '' : `
+          <div class="comment-actions">
+            <button type="button" class="link-btn" data-edit>${icon('edit')} Modifier</button>
+            <button type="button" class="link-btn danger" data-del>${icon('trash')} Supprimer</button>
+          </div>`}
+        </div>
+        ${editing ? `
+          <form class="comment-edit">
+            <textarea class="input" aria-label="Modifier le commentaire">${esc(c.text)}</textarea>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost btn-sm" data-cancel>Annuler</button>
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+            </div>
+          </form>` : `<p>${esc(c.text)}</p>`}
+      </div>
+    </div>`;
+};
+
+function renderComments() {
+  $('#ccount').textContent = `(${comments.length})`;
+  $('#comments').innerHTML = comments.length
+    ? comments.map(commentHtml).join('')
+    : '<p class="muted">Aucun commentaire pour l\'instant.</p>';
+  const ta = $('#comments .comment-edit textarea');
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="index.html" aria-label="Retour au Dashboard">${icon('back')}</a>
+      <a class="btn btn-ghost" href="index.html">Dashboard</a>
+    </div>
+    <a class="btn btn-secondary" href="feature-form.html?id=${f.id}">${icon('edit')} Modifier</a>
+  </div>
+
+  <section class="card section">
+    <div class="hero">
+      <div>
+        <div class="eyebrow muted">Feature</div>
+        <h1 style="margin-top:8px">${esc(f.title)}</h1>
+      </div>
+    </div>
+    <p class="desc">${esc(f.description)}</p>
+  </section>
+
+  <section class="facts section" id="facts"></section>
+
+  <section class="card">
+    <div class="section-head"><h2>Commentaires <span class="muted" id="ccount">(${comments.length})</span></h2></div>
+    <div class="comments" id="comments">
+    </div>
+    <form class="composer" id="composer">
+      ${avatar(me)}
+      <textarea class="input" id="comment" placeholder="Écrire un commentaire…"></textarea>
+      <button class="btn btn-primary" type="submit">${icon('send')} Envoyer</button>
+    </form>
+  </section>`;
+
+renderComments();
+
+/* ---------- Infos de la feature, avec Personne et Sprint modifiables d'un clic ---------- */
+function pickerItem(value, current, label, lead = '') {
+  const on = value === current;
+  return `<button type="button" class="dd-item ${on ? 'on' : ''}" role="option" data-value="${value ?? ''}">
+    ${lead}<span>${label}</span>${on ? `<span class="check-end">${icon('check')}</span>` : ''}</button>`;
+}
+
+function picker(id, label, valueHtml, items) {
+  return `
+    <div class="fact fact-pick" id="${id}">
+      <button type="button" class="fact-btn" data-toggle aria-haspopup="listbox" aria-expanded="false" title="Cliquer pour changer">
+        <span class="small">${label}</span>
+        <span class="value"><span class="pick-value">${valueHtml}</span>${icon('chevron')}</span>
+      </button>
+      <div class="dd-panel" hidden><div class="dd-list" role="listbox">${items}</div></div>
+    </div>`;
+}
+
+function renderFacts() {
+  const who = member(f.assigneeId);
+  const sp = sprintById(f.sprintId);
+  const sprints = DB.sprints.filter((s) => s.status !== 'done' || s.id === f.sprintId);
+
+  $('#facts').innerHTML = `
+    <div class="fact"><span class="small">Priorité</span><div class="value">${priorityBadge(f.priority)}</div></div>
+    <div class="fact"><span class="small">Statut</span><div class="value">${statusBadge(f.status)}</div></div>
+    <div class="fact"><span class="small">Effort</span><div class="value big">${f.effort} point${f.effort > 1 ? 's' : ''}</div></div>
+    <div class="fact"><span class="small">Utilisateurs impactés</span><div class="value big">${fmtNumber(f.users)}</div></div>
+    <div class="fact"><span class="small">Module</span><div class="value">${moduleDot(mod, 'mdot-lg')}<a href="module.html?id=${mod.id}">${esc(mod.name)}</a></div></div>
+    ${picker('pick-sprint', 'Sprint',
+      sp ? esc(sp.goal) : '<span class="backlog-link">Backlog</span>',
+      pickerItem(null, f.sprintId, 'Backlog (aucun sprint)') +
+      sprints.map((s) => pickerItem(s.id, f.sprintId, `${esc(s.goal)} <span class="small">${SPRINT_STATUS[s.status]}</span>`)).join(''))}
+    ${picker('pick-assignee', 'Personne assignée',
+      who ? `${avatar(who)}${esc(fullName(who))}` : '<span class="muted">Non assignée</span>',
+      pickerItem(null, f.assigneeId, 'Non assignée') +
+      DB.members.map((m) => pickerItem(m.id, f.assigneeId, esc(fullName(m)), avatar(m))).join(''))}`;
+
+  bindPopover($('#pick-sprint'));
+  bindPopover($('#pick-assignee'));
+}
+
+$('#facts').addEventListener('click', (e) => {
+  const item = e.target.closest('[data-value]');
+  if (!item) return;
+  const value = Number(item.dataset.value) || null;
+  if (item.closest('#pick-assignee')) {
+    if (value === f.assigneeId) return renderFacts();
+    f.assigneeId = value;
+    toast(value ? `Assignée à ${fullName(member(value))}` : 'Feature non assignée');
+  } else {
+    if (value === f.sprintId) return renderFacts();
+    f.sprintId = value;
+    // Sans sprint → Backlog ; sortie du backlog → À faire (Terminé et Annulé ne changent pas)
+    if (!value && !['done', 'cancelled'].includes(f.status)) f.status = 'backlog';
+    if (value && f.status === 'backlog') f.status = 'todo';
+    toast(value ? `Déplacée dans « ${sprintById(value).goal} »` : 'Feature remise dans le backlog');
+  }
+  renderFacts();
+});
+
+renderFacts();
+
+// Envoyer : le commentaire s'affiche dans la page mais n'est pas enregistré.
+$('#composer').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const text = $('#comment').value.trim();
+  if (!text) { $('#comment').focus(); return; }
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  comments.push({ id: nextId++, authorId: me.id, date: iso, text });
+  $('#comment').value = '';
+  renderComments();
+  toast('Commentaire envoyé');
+});
+
+// Modifier / Supprimer un commentaire
+const commentOf = (el) => comments.find((c) => c.id === Number(el.closest('.comment').dataset.id));
+$('#comments').addEventListener('click', (e) => {
+  if (e.target.closest('[data-edit]')) {
+    editingId = commentOf(e.target).id;
+    renderComments();
+  } else if (e.target.closest('[data-cancel]')) {
+    editingId = null;
+    renderComments();
+    toast('Modification annulée');
+  } else if (e.target.closest('[data-del]')) {
+    const c = commentOf(e.target);
+    confirmBox({
+      title: 'Supprimer ce commentaire ?',
+      text: `Le commentaire de ${esc(fullName(member(c.authorId)))} sera supprimé définitivement.`,
+      onOk: () => { comments = comments.filter((x) => x !== c); renderComments(); toast('Commentaire supprimé'); },
+    });
+  }
+});
+$('#comments').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const c = commentOf(e.target);
+  const text = $('textarea', e.target).value.trim();
+  if (!text) { $('textarea', e.target).focus(); return; }
+  Object.assign(c, { text, edited: true });
+  editingId = null;
+  renderComments();
+  toast('Commentaire modifié');
+});
+</script>
+</body>
+</html>

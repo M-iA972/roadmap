@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprints · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('sprints');
+
+let sprints = DB.sprints.slice();
+const countOf = (s) => DB.features.filter((f) => f.sprintId === s.id).length;
+
+// Filtres et tri
+const DEFAULTS = { status: 'all', from: '', to: '', sort: 'date_desc' };
+let state = { ...DEFAULTS };
+const SORTS = [
+  ['date_desc', 'Date de début, plus récent'],
+  ['date_asc', 'Date de début, plus ancien'],
+  ['count_desc', 'Nombre de features, décroissant'],
+  ['count_asc', 'Nombre de features, croissant'],
+];
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div>
+      <h1>Sprints</h1>
+      <p class="sub muted">Tous les sprints, passés, en cours et à venir.</p>
+    </div>
+    <a class="btn btn-primary" href="sprint-form.html">${icon('plus')} Nouveau sprint</a>
+  </div>
+
+  <section class="card section">
+    <div class="filter-row">
+      <div class="field">
+        <span class="label">Statut</span>
+        <div class="filters" id="status-chips"></div>
+      </div>
+      <div class="field">
+        <label for="from">Début à partir du</label>
+        <input class="input" type="date" id="from">
+      </div>
+      <div class="field">
+        <label for="to">Fin au plus tard le</label>
+        <input class="input" type="date" id="to">
+      </div>
+      <div class="field">
+        <label for="sort">Trier par</label>
+        <select class="input" id="sort">${options(SORTS, state.sort)}</select>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2>Liste des sprints</h2>
+    <div class="actions"><span class="muted" id="count"></span><button type="button" class="btn btn-ghost btn-sm" id="reset">Réinitialiser les filtres</button></div>
+  </div>
+  <div id="list"></div>`;
+
+function renderChips() {
+  const all = [['all', 'Tous'], ...Object.entries(SPRINT_STATUS)];
+  $('#status-chips').innerHTML = all.map(([k, label]) =>
+    `<button type="button" class="chip ${state.status === k ? 'on' : ''}" data-status="${k}">${label}</button>`).join('');
+}
+
+function visibleSprints() {
+  const list = sprints.filter((s) =>
+    (state.status === 'all' || s.status === state.status) &&
+    (!state.from || s.start >= state.from) &&
+    (!state.to || s.end <= state.to));
+  const by = {
+    date_desc: (a, b) => b.start.localeCompare(a.start),
+    date_asc: (a, b) => a.start.localeCompare(b.start),
+    count_desc: (a, b) => countOf(b) - countOf(a) || b.start.localeCompare(a.start),
+    count_asc: (a, b) => countOf(a) - countOf(b) || b.start.localeCompare(a.start),
+  };
+  return list.sort(by[state.sort]);
+}
+
+function render() {
+  const list = visibleSprints();
+  $('#count').textContent = `${list.length} sprint${list.length > 1 ? 's' : ''}`;
+  if (!list.length) {
+    $('#list').innerHTML = '<div class="empty">Aucun sprint ne correspond à ces filtres.</div>';
+    return;
+  }
+  $('#list').innerHTML = `
+    <div class="table" style="--cols: minmax(0,2fr) 150px 150px 140px 100px 232px">
+      <div class="thead"><span>Objectif</span><span>Début</span><span>Fin</span><span>Statut</span><span>Features</span><span></span></div>
+      ${list.map((s) => `
+        <div class="trow" data-href="sprint.html?id=${s.id}">
+          <a class="t-title" href="sprint.html?id=${s.id}">${esc(s.goal)}</a>
+          <span class="small">${fmtDate(s.start)}</span>
+          <span class="small">${fmtDate(s.end)}</span>
+          <div>${sprintStatusBadge(s.status)}</div>
+          <span class="small">${countOf(s)} feature${countOf(s) > 1 ? 's' : ''}</span>
+          <div class="cell-actions">
+            <a class="btn btn-secondary btn-sm" href="sprint-form.html?id=${s.id}">${icon('edit')} Modifier</a>
+            <button class="btn btn-danger btn-sm" data-delete="${s.id}">${icon('trash')} Supprimer</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+$('#list').addEventListener('click', (e) => {
+  const del = e.target.closest('[data-delete]');
+  if (!del) return;
+  const s = sprintById(Number(del.dataset.delete));
+  const n = countOf(s);
+  // Les features du sprint repartent dans le backlog
+  confirmBox({
+    title: 'Supprimer ce sprint ?',
+    text: n
+      ? `Le sprint « ${esc(s.goal)} » sera supprimé. Ses ${n} feature${n > 1 ? 's' : ''} repartiront dans le backlog.`
+      : `Le sprint « ${esc(s.goal)} » ne contient aucune feature. Il sera supprimé définitivement.`,
+    onOk: () => { sprints = sprints.filter((x) => x.id !== s.id); render(); toast('Sprint supprimé'); },
+  });
+});
+
+// Filtres
+$('#status-chips').addEventListener('click', (e) => {
+  const chip = e.target.closest('[data-status]');
+  if (!chip) return;
+  state.status = chip.dataset.status;
+  renderChips(); render();
+});
+$('#from').addEventListener('change', (e) => { state.from = e.target.value; render(); });
+$('#to').addEventListener('change', (e) => { state.to = e.target.value; render(); });
+$('#sort').addEventListener('change', (e) => { state.sort = e.target.value; render(); });
+$('#reset').addEventListener('click', () => {
+  state = { ...DEFAULTS };
+  $('#from').value = ''; $('#to').value = ''; $('#sort').value = state.sort;
+  renderChips(); render();
+});
+
+renderChips();
+render();
+</script>
+</body>
+</html>

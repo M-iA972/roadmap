@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nouveau sprint · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('sprints');
+
+// ?id=… : même formulaire, déjà rempli, pour modifier un sprint
+const s = sprintById(idParam());
+const editing = !!s;
+// Un nouveau sprint part automatiquement en « Planification ».
+const v = s || { goal: '', start: '2026-12-21', end: '2027-01-08', status: 'planning' };
+if (editing) document.title = 'Modifier le sprint · Roadmap';
+const backlog = DB.features.filter((f) => !f.sprintId && f.status === 'backlog');
+
+$('#app').innerHTML = `
+  <div class="page-head">
+    <div class="title">
+      <a class="btn btn-icon" href="sprints.html" aria-label="Retour aux sprints">${icon('back')}</a>
+      <div>
+        <h1>${editing ? 'Modifier le sprint' : 'Nouveau sprint'}</h1>
+        <p class="sub muted">${editing ? esc(s.goal) : 'Fixez un objectif clair et des dates.'}</p>
+      </div>
+    </div>
+  </div>
+
+  <form class="card form-card" id="form" novalidate>
+    <div class="form-grid">
+      <div class="field full" id="f-goal">
+        <label for="goal">Objectif</label>
+        <input class="input" id="goal" value="${esc(v.goal)}" placeholder="Ex. : Intégrations prêtes pour la bêta">
+        <div class="err-msg">Donnez un objectif au sprint.</div>
+      </div>
+      <div class="field">
+        <label for="start">Date de début</label>
+        <input class="input" id="start" type="date" value="${v.start}">
+      </div>
+      <div class="field" id="f-end">
+        <label for="end">Date de fin</label>
+        <input class="input" id="end" type="date" value="${v.end}">
+        <div class="err-msg">La date de fin doit être après la date de début.</div>
+      </div>
+      ${editing ? `
+      <div class="field">
+        <label for="status">Statut</label>
+        <select class="input" id="status">${options(Object.entries(SPRINT_STATUS), v.status)}</select>
+      </div>` : `
+      <details class="advanced full" id="advanced">
+        <summary>${icon('chevron')} Options avancées <span class="small">Ajouter des features du backlog</span></summary>
+        <div class="adv-body">
+          <p class="small">Cochez les features du backlog à mettre dans ce sprint. Elles passeront au statut « À faire ».</p>
+          <div class="check-list">
+            ${backlog.length ? backlog.map((f) => `
+              <label class="check-row">
+                <input type="checkbox" name="features" value="${f.id}">
+                <span class="checkbox">${icon('check')}</span>
+                <span class="title">${esc(f.title)}</span>
+                ${moduleChip(moduleById(f.moduleId))}
+                ${priorityBadge(f.priority)}
+              </label>`).join('') : '<p class="muted">Le backlog est vide.</p>'}
+          </div>
+        </div>
+      </details>
+      <div class="full note">${icon('info')}<span>Le sprint sera créé avec le statut <strong>Planification</strong>. Vous pourrez le passer en « Actif » puis « Terminé » avec « Modifier ».</span></div>`}
+    </div>
+
+    <div class="form-foot">
+      <button type="button" class="btn btn-ghost" id="cancel">Annuler</button>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>`;
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const noGoal = !$('#goal').value.trim();
+  const badDates = !$('#start').value || !$('#end').value || $('#end').value <= $('#start').value;
+  setError($('#f-goal'), noGoal);
+  setError($('#f-end'), badDates);
+  if (noGoal || badDates) return;
+  const n = document.querySelectorAll('input[name="features"]:checked').length;
+  goWithMessage('sprints.html', editing ? 'Sprint modifié' : n ? `Sprint ajouté avec ${n} feature${n > 1 ? 's' : ''}` : 'Sprint ajouté');
+});
+$('#cancel').addEventListener('click', () => goWithMessage('sprints.html', editing ? 'Modification annulée' : 'Ajout annulé'));
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="auth">
+  <div class="card auth-card">
+    <a class="logo" href="connexion.html"><span class="logo-mark"></span>Roadmap</a>
+    <h1>Connexion</h1>
+    <p class="muted">Content de vous revoir !</p>
+
+    <form id="form" novalidate>
+      <div class="field" id="f-email">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" autocomplete="username" placeholder="prenom.nom@roadmap.app">
+        <div class="err-msg">Saisissez une adresse email valide.</div>
+      </div>
+      <div class="field" id="f-password">
+        <label for="password">Mot de passe</label>
+        <input class="input" id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+        <div class="err-msg">Saisissez votre mot de passe.</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+    </form>
+  </div>
+
+  <!-- Raccourci propre au prototype : dans l'app, on arrive sur cet écran par le lien de l'e-mail d'invitation. -->
+  <p class="small">Prototype : <a href="inscription.html">ouvrir l'écran « Créer mon compte »</a> (lien reçu par e-mail)</p>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+// Rien n'est vérifié côté serveur : des champs remplis suffisent pour entrer.
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const badEmail = !isEmail($('#email').value.trim());
+  const noPassword = !$('#password').value;
+  setError($('#f-email'), badEmail);
+  setError($('#f-password'), noPassword);
+  if (badEmail || noPassword) return;
+  location.href = 'index.html';
+});
+$('#email').focus();
+</script>
+</body>
+</html>

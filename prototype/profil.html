@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche profil · Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main class="page" id="app"></main>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+renderNav('equipe');
+
+const m = member(idParam()) || DB.members[0];
+const isMe = m.id === DB.currentUserId; // « Modifier » seulement sur son propre profil
+const features = DB.features.filter((f) => f.assigneeId === m.id);
+
+function render() {
+  document.title = `${fullName(m)} · Roadmap`;
+  $('#app').innerHTML = `
+    <div class="page-head">
+      <div class="title">
+        <a class="btn btn-icon" href="equipe.html" aria-label="Retour à l'équipe">${icon('back')}</a>
+        <a class="btn btn-ghost" href="equipe.html">Équipe</a>
+      </div>
+      ${isMe ? `<button type="button" class="btn btn-secondary" id="edit">${icon('edit')} Modifier</button>` : ''}
+    </div>
+
+    <section class="card section">
+      <div class="hero">
+        ${avatar(m, true)}
+        <div>
+          <h1>${esc(m.firstName)} ${esc(m.lastName)}</h1>
+          <a href="mailto:${esc(m.email)}">${esc(m.email)}</a>
+          ${isMe ? '<p class="small" style="margin-top:4px">C\'est vous</p>' : ''}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Features assignées</h2>
+        <span class="muted">${features.length} feature${features.length > 1 ? 's' : ''}</span>
+      </div>
+      ${featureTable(features, ['module', 'sprint', 'status', 'priority'])}
+    </section>`;
+  if (isMe) $('#edit').addEventListener('click', openEdit);
+}
+
+// Modifier son profil : prénom, nom, email, photo. Les changements restent dans la page.
+function openEdit() {
+  const o = openModal({
+    title: 'Modifier mon profil',
+    okLabel: 'Enregistrer',
+    body: `
+      ${photoField(m)}
+      <div class="field" id="p-first"><label for="first">Prénom</label><input class="input" id="first" value="${esc(m.firstName)}"><div class="err-msg">Saisissez votre prénom.</div></div>
+      <div class="field" id="p-last"><label for="last">Nom</label><input class="input" id="last" value="${esc(m.lastName)}"><div class="err-msg">Saisissez votre nom.</div></div>
+      <div class="field" id="p-email"><label for="email">Email</label><input class="input" id="email" type="email" value="${esc(m.email)}"><div class="err-msg">Saisissez une adresse email valide.</div></div>`,
+    onOk: (o) => {
+      const first = $('#first', o).value.trim();
+      const last = $('#last', o).value.trim();
+      const email = $('#email', o).value.trim();
+      setError($('#p-first', o), !first);
+      setError($('#p-last', o), !last);
+      setError($('#p-email', o), !isEmail(email));
+      if (!first || !last || !isEmail(email)) return false;
+      Object.assign(m, { firstName: first, lastName: last, email });
+      if (o.querySelector('.photo-field-wrap').dataset.photo) m.photo = o.querySelector('.photo-field-wrap').dataset.photo;
+      renderNav('equipe');
+      render();
+      toast('Profil modifié');
+    },
+  });
+  bindPhotoField(o.querySelector('.photo-field-wrap'));
+}
+
+render();
+</script>
+</body>
+</html>
