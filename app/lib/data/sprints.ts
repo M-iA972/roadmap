@@ -56,6 +56,12 @@ export type SprintOption = Pick<Tables<"sprints">, "id" | "goal" | "status">;
 // includeId : un sprint à garder dans la liste même s'il est terminé
 // (le sprint actuel d'une feature qu'on modifie).
 export async function getSprintOptions(includeId: number | null = null): Promise<SprintOption[]> {
+  const sprints = await getAllSprintOptions();
+  return sprints.filter((sprint) => sprint.status !== "completed" || sprint.id === includeId);
+}
+
+// Tous les sprints, même terminés, du plus récent au plus ancien (filtre du Dashboard).
+export async function getAllSprintOptions(): Promise<SprintOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("sprints")
@@ -65,5 +71,5 @@ export async function getSprintOptions(includeId: number | null = null): Promise
   if (error) {
     throw new Error(`Impossible de lire les sprints : ${error.message}`);
   }
-  return data.filter((sprint) => sprint.status !== "completed" || sprint.id === includeId);
+  return data;
 }
