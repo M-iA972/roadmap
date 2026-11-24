@@ -27,7 +27,7 @@ const COLUMNS: Record<Column, { header: string; width: string; cell: (feature: F
   module: {
     header: "Module",
     width: "minmax(0,1fr)",
-    cell: (feature) => <ModuleBadge module={feature.module} />,
+    cell: (feature) => <ModuleBadge module={feature.module} link className={rowControl} />,
   },
   assignee: {
     header: "Assignée",

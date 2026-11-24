@@ -63,7 +63,7 @@ export async function ActionRequired() {
                   {feature.title}
                 </Link>
               </span>
-              <span role="cell"><ModuleBadge module={feature.module} /></span>
+              <span role="cell"><ModuleBadge module={feature.module} link className={rowControl} /></span>
               <span role="cell"><PriorityBadge priority={feature.priority} /></span>
               <span role="cell" className="flex md:justify-end">
                 <AssignButton

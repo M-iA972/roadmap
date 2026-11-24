@@ -85,7 +85,9 @@ async function FeatureDetail({ params }: { params: Promise<{ id: string }> }) {
             className="size-5 shrink-0 rounded-full"
             style={{ backgroundColor: feature.module.color }}
           />
-          {feature.module.name}
+          <Link href={`/modules/${feature.module.id}`} className="text-violet-electrique hover:underline">
+            {feature.module.name}
+          </Link>
         </Fact>
         <SprintPicker featureId={feature.id} sprint={feature.sprint} sprints={sprints} />
         <AssigneePicker featureId={feature.id} assignee={feature.assignee} members={members} />

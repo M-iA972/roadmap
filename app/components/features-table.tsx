@@ -80,7 +80,7 @@ export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
           </span>
 
           <span role="cell">
-            <ModuleBadge module={feature.module} />
+            <ModuleBadge module={feature.module} link className={rowControl} />
           </span>
 
           <span role="cell">

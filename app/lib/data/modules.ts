@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
 
-export type ModuleWithCount = Pick<Tables<"modules">, "id" | "name" | "color"> & {
+export type ModuleWithCount = Pick<Tables<"modules">, "id" | "name" | "color" | "description"> & {
   featureCount: number;
 };
 
@@ -14,7 +14,7 @@ export async function getModulesWithFeatureCount(): Promise<ModuleWithCount[]> {
   // (grâce à la clé étrangère features.module_id), sans les télécharger.
   const { data, error } = await supabase
     .from("modules")
-    .select("id, name, color, features(count)")
+    .select("id, name, color, description, features(count)")
     .order("name");
 
   if (error) {
@@ -26,6 +26,18 @@ export async function getModulesWithFeatureCount(): Promise<ModuleWithCount[]> {
     id: module.id,
     name: module.name,
     color: module.color,
+    description: module.description,
     featureCount: module.features[0]?.count ?? 0,
   }));
+}
+
+// Un module par son id, ou null s'il n'existe pas.
+export async function getModule(id: number): Promise<Tables<"modules"> | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("modules").select("*").eq("id", id).maybeSingle();
+
+  if (error) {
+    throw new Error(`Impossible de lire le module : ${error.message}`);
+  }
+  return data;
 }
