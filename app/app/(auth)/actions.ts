@@ -4,13 +4,10 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { ActionResult } from "@/lib/action-result";
 import { withMessage } from "@/lib/messages";
 import { loginSchema, signupSchema } from "@/lib/schemas/auth";
 import { createClient } from "@/lib/supabase/server";
-
-// Ce que renvoie une action quand quelque chose ne va pas.
-// En cas de succès, l'action redirige : elle ne renvoie rien.
-export type ActionResult = { error: string } | undefined;
 
 // Connexion avec email et mot de passe.
 // values est typé unknown : les données viennent du navigateur, on les vérifie avec zod.

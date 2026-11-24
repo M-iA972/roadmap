@@ -49,3 +49,21 @@ export async function getActiveSprint(): Promise<ActiveSprint | null> {
     doneCount: features.filter((feature) => feature.status === "done").length,
   };
 }
+
+export type SprintOption = Pick<Tables<"sprints">, "id" | "goal" | "status">;
+
+// Sprints proposés dans les listes « Sprint » : ceux en planification ou actifs.
+// includeId : un sprint à garder dans la liste même s'il est terminé
+// (le sprint actuel d'une feature qu'on modifie).
+export async function getSprintOptions(includeId: number | null = null): Promise<SprintOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sprints")
+    .select("id, goal, status")
+    .order("start_date", { ascending: false });
+
+  if (error) {
+    throw new Error(`Impossible de lire les sprints : ${error.message}`);
+  }
+  return data.filter((sprint) => sprint.status !== "completed" || sprint.id === includeId);
+}

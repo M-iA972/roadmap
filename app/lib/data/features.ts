@@ -111,3 +111,51 @@ export async function getActionRequiredFeatures(): Promise<ActionRequiredFeature
     module: feature.modules,
   }));
 }
+
+// Une feature avec toutes ses informations, pour la fiche et le formulaire de modification.
+export type FeatureDetail = Tables<"features"> & {
+  module: Pick<Tables<"modules">, "id" | "name" | "color">;
+  assignee: Pick<
+    Tables<"profiles">,
+    "id" | "firstname" | "lastname" | "email" | "avatar_url"
+  > | null;
+  sprint: Pick<Tables<"sprints">, "id" | "goal" | "status"> | null;
+};
+
+// Une feature par son id, ou null si elle n'existe pas.
+export async function getFeature(id: number): Promise<FeatureDetail | null> {
+  const supabase = await createClient();
+
+  // « * » : toutes les colonnes de la feature, puis son module et la personne assignée.
+  const { data: feature, error } = await supabase
+    .from("features")
+    .select(
+      `*,
+       modules ( id, name, color ),
+       profiles ( id, firstname, lastname, email, avatar_url )`,
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Impossible de lire la feature : ${error.message}`);
+  }
+  if (!feature) {
+    return null;
+  }
+
+  // Pas de clé étrangère entre features.sprint_id et sprints : on lit le sprint à part.
+  let sprint: FeatureDetail["sprint"] = null;
+  if (feature.sprint_id !== null) {
+    const { data } = await supabase
+      .from("sprints")
+      .select("id, goal, status")
+      .eq("id", feature.sprint_id)
+      .maybeSingle();
+    sprint = data;
+  }
+
+  // On retire les objets bruts « modules » et « profiles » pour garder des noms clairs.
+  const { modules, profiles, ...columns } = feature;
+  return { ...columns, module: modules, assignee: profiles, sprint };
+}

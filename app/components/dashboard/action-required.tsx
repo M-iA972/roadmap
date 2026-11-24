@@ -1,14 +1,24 @@
+import Link from "next/link";
+import { AssignButton } from "@/components/dashboard/assign-button";
 import { ModuleBadge } from "@/components/module-badge";
 import { PriorityBadge } from "@/components/priority-badge";
 import { getActionRequiredFeatures } from "@/lib/data/features";
+import { getMembers } from "@/lib/data/profiles";
+import { getSprintOptions } from "@/lib/data/sprints";
+import { rowControl, stretchedLink } from "@/lib/row-link";
 
 // Grille commune à l'en-tête et aux lignes. Sur mobile, tout passe sur une colonne.
 const columns =
-  "grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_130px] md:items-center md:gap-4";
+  "grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_130px_150px] md:items-center md:gap-4";
 
 // Section 4 du Dashboard : features du backlog sans personne assignée.
 export async function ActionRequired() {
-  const features = await getActionRequiredFeatures();
+  // Les features à traiter, et les listes de la fenêtre « Assigner ».
+  const [features, members, sprints] = await Promise.all([
+    getActionRequiredFeatures(),
+    getMembers(),
+    getSprintOptions(),
+  ]);
 
   return (
     <section aria-labelledby="action-title" className="mb-entre-sections">
@@ -37,6 +47,7 @@ export async function ActionRequired() {
             <span role="columnheader" className="text-libelle text-gris-texte">Feature</span>
             <span role="columnheader" className="text-libelle text-gris-texte">Module</span>
             <span role="columnheader" className="text-libelle text-gris-texte">Priorité</span>
+            <span role="columnheader" className="sr-only">Actions</span>
           </div>
 
           {features.map((feature) => (
@@ -44,11 +55,25 @@ export async function ActionRequired() {
             <div
               key={feature.id}
               role="row"
-              className={`${columns} rounded-carte border-2 border-jaune-soleil bg-blanc px-6 py-4 shadow-carte transition-colors hover:bg-rose-clair`}
+              className={`${columns} relative rounded-carte border-2 border-jaune-soleil bg-blanc px-6 py-4 shadow-carte transition-colors hover:bg-rose-clair`}
             >
-              <span role="cell" className="font-semibold">{feature.title}</span>
+              <span role="cell">
+                {/* Un clic n'importe où sur la ligne ouvre la fiche feature. */}
+                <Link href={`/features/${feature.id}`} className={stretchedLink}>
+                  {feature.title}
+                </Link>
+              </span>
               <span role="cell"><ModuleBadge module={feature.module} /></span>
               <span role="cell"><PriorityBadge priority={feature.priority} /></span>
+              <span role="cell" className="flex md:justify-end">
+                <AssignButton
+                  featureId={feature.id}
+                  featureTitle={feature.title}
+                  members={members}
+                  sprints={sprints}
+                  className={rowControl}
+                />
+              </span>
             </div>
           ))}
         </div>
