@@ -85,10 +85,13 @@ export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
 
           <span role="cell">
             {feature.assignee ? (
-              <span className="inline-flex items-center gap-2 font-semibold">
+              <Link
+                href={`/equipe/${feature.assignee.id}`}
+                className={cn(rowControl, "inline-flex items-center gap-2 font-semibold hover:text-violet-electrique")}
+              >
                 <Avatar person={feature.assignee} />
                 {getFullName(feature.assignee)}
-              </span>
+              </Link>
             ) : (
               <span className="text-petit text-gris-texte">Non assignée</span>
             )}

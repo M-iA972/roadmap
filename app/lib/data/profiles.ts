@@ -20,3 +20,45 @@ export async function getMembers(): Promise<Member[]> {
   }
   return data;
 }
+
+export type MemberWithCount = Member & { featureCount: number };
+
+// Les membres de l'écran Équipe, avec leur nombre de features assignées.
+export async function getMembersWithFeatureCount(): Promise<MemberWithCount[]> {
+  const supabase = await createClient();
+
+  // « features(count) » : la base compte les features de chaque personne
+  // grâce à la clé étrangère features.assigned_to, sans les télécharger.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, firstname, lastname, email, avatar_url, features(count)")
+    .order("firstname");
+
+  if (error) {
+    throw new Error(`Impossible de lire l'équipe : ${error.message}`);
+  }
+
+  return data.map(({ features, ...member }) => ({
+    ...member,
+    featureCount: features[0]?.count ?? 0,
+  }));
+}
+
+// Un membre par son id, ou null s'il n'existe pas.
+export async function getMember(id: string): Promise<Member | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, firstname, lastname, email, avatar_url")
+    .eq("id", id)
+    .maybeSingle();
+
+  // Un id qui n'a pas la forme d'un uuid fait une erreur « 22P02 » : on le traite comme introuvable.
+  if (error?.code === "22P02") {
+    return null;
+  }
+  if (error) {
+    throw new Error(`Impossible de lire le profil : ${error.message}`);
+  }
+  return data;
+}
