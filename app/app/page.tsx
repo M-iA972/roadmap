@@ -1,31 +1,23 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { FeaturesTable } from "@/components/features-table";
-import { getDashboardFeatures } from "@/lib/data/features";
+import { ActionRequired } from "@/components/dashboard/action-required";
+import { FeaturesSection } from "@/components/dashboard/features-section";
+import { NewFeatureCard } from "@/components/dashboard/new-feature-card";
+import { SprintNowCard } from "@/components/dashboard/sprint-now-card";
 
 export const metadata: Metadata = {
   title: "Dashboard · Roadmap",
 };
 
-// Partie qui lit la base. Elle est asynchrone et dépend de la requête (cookies),
-// donc elle s'affiche dans un <Suspense> : le reste de la page s'affiche tout de suite.
-async function DashboardFeatures() {
-  const features = await getDashboardFeatures();
-
-  return (
-    <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-titre-section">Features</h2>
-        <span className="text-petit text-gris-texte">
-          {features.length} feature{features.length > 1 ? "s" : ""}
-        </span>
-      </div>
-      <FeaturesTable features={features} />
-    </>
-  );
+// Texte affiché pendant qu'une section charge ses données.
+function Loading({ label }: { label: string }) {
+  return <p className="rounded-carte bg-blanc p-carte text-petit text-gris-texte">{label}</p>;
 }
 
-export default function DashboardPage() {
+// Page Dashboard. Chaque section qui lit la base est dans un <Suspense> :
+// le titre et la carte « Nouvelle feature » s'affichent tout de suite,
+// puis chaque section apparaît dès que ses données arrivent.
+export default function DashboardPage({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto w-full max-w-[1200px] p-page-mobile md:p-page">
       <header className="mb-entre-sections">
@@ -35,13 +27,23 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <section aria-label="Features">
-        <Suspense
-          fallback={<p className="text-petit text-gris-texte">Chargement des features…</p>}
-        >
-          <DashboardFeatures />
+      {/* Sections 2 et 3 : sprint en cours (2/3 de la largeur) et nouvelle feature (1/3) */}
+      <div className="mb-entre-sections grid grid-cols-1 gap-entre-cartes md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Suspense fallback={<Loading label="Chargement du sprint en cours…" />}>
+          <SprintNowCard />
         </Suspense>
-      </section>
+        <NewFeatureCard />
+      </div>
+
+      {/* Section 4 : action requise */}
+      <Suspense fallback={<Loading label="Chargement des features à traiter…" />}>
+        <ActionRequired />
+      </Suspense>
+
+      {/* Section 1 : filtres et tableau des features */}
+      <Suspense fallback={<Loading label="Chargement des features…" />}>
+        <FeaturesSection searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }

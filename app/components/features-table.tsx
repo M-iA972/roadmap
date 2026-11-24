@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Avatar, getFullName } from "@/components/avatar";
 import { ModuleBadge } from "@/components/module-badge";
 import type { DashboardFeature } from "@/lib/data/features";
@@ -5,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 type FeaturesTableProps = {
   features: DashboardFeature[];
+  backlogHref: string; // adresse du Dashboard avec le filtre « Backlog »
 };
 
 // Les 4 colonnes du tableau. La même grille sert à l'en-tête et aux lignes
@@ -15,11 +17,11 @@ const columns =
 // Tableau des features (design system : chaque ligne est une carte blanche arrondie).
 // On utilise des <div> pour la mise en page en grille, avec les rôles ARIA d'un tableau
 // pour que les lecteurs d'écran le lisent comme un vrai tableau.
-export function FeaturesTable({ features }: FeaturesTableProps) {
+export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
   if (features.length === 0) {
     return (
       <p className="rounded-carte bg-blanc p-carte text-center text-gris-texte">
-        Aucune feature pour le moment.
+        Aucune feature ne correspond à ce filtre.
       </p>
     );
   }
@@ -51,7 +53,14 @@ export function FeaturesTable({ features }: FeaturesTableProps) {
             {feature.sprint ? (
               feature.sprint.goal ?? "Sprint sans objectif"
             ) : (
-              <span className="font-semibold text-gris-texte">Backlog</span>
+              // Un clic sur « Backlog » applique le filtre Backlog.
+              <Link
+                href={backlogHref}
+                scroll={false}
+                className="font-semibold text-gris-texte hover:underline"
+              >
+                Backlog
+              </Link>
             )}
           </span>
 

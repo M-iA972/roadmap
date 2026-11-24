@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Urbanist } from "next/font/google";
 import "./globals.css";
+import { TopNav } from "@/components/top-nav";
 
 // Police du design system. next/font la télécharge au moment de la compilation
 // et la sert depuis l'app : aucun appel à Google quand un utilisateur ouvre une page.
@@ -18,7 +19,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${urbanist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Menu du haut, affiché sur toutes les pages */}
+        <TopNav />
+        {children}
+      </body>
     </html>
   );
 }
