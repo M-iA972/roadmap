@@ -13,7 +13,7 @@
 10. Équipe
 11. Fiche profil
 12. Connexion
-13. Créer mon compte (lien reçu par email)
+13. Créer mon compte
 
 Sur tous les écrans, sauf Connexion et Créer mon compte : un menu en haut avec Dashboard, Sprints, Modules, Équipe,
 et à droite l'avatar et le prénom de la personne connectée.
@@ -33,9 +33,15 @@ On y voit :
 - Section 4 : « Action requise », la liste des features en backlog et non assignées
   (titre, module, priorité), avec leur nombre et un bouton « Assigner » sur chaque ligne.
 On peut :
-- Filtrer les features : en sprint, en backlog, par module.
+- Filtrer les features : en sprint, en backlog, par module, par sprint et par statut.
   Le filtre par module est un menu déroulant : une barre de recherche en haut,
   puis « Tous les modules » et la liste des modules (avec leur couleur et leur nombre de features).
+  Les filtres par sprint (« Tous les sprints » puis tous les sprints, même terminés) et par statut
+  (« Tous les statuts » puis les 5 statuts) sont des menus déroulants sans recherche.
+  Choisir un sprint quitte le filtre « Backlog » ; choisir « Backlog » retire le filtre de sprint.
+  Les filtres sont rangés dans l'adresse de la page (on peut partager le lien).
+- Changer de page : le tableau affiche 10 features par page, avec « Précédent » et « Suivant ».
+  Changer un filtre ramène à la première page.
 - Cliquer sur « Assigner » (section 4) → une petite fenêtre s'ouvre pour choisir une personne
   et un sprint (les deux sont obligatoires). Après validation, la feature passe au statut « À faire »
   dans le sprint choisi, quitte la section « Action requise », et le message « Feature assignée » s'affiche.
@@ -48,7 +54,9 @@ On peut :
 - Cliquer sur « Nouvelle feature » → écran Nouvelle feature.
 
 ### 2. Nouvelle feature (formulaire)
-On y voit les champs : titre, description, priorité, effort, nombre d'utilisateurs impactés, module.
+On y voit les champs : titre, description, priorité, effort (XS, S, M, L, XL ou « Non estimé »),
+utilisateurs impactés (« Peu d'utilisateurs », « Une partie des utilisateurs », « Beaucoup d'utilisateurs »), module.
+Le titre et le module sont obligatoires.
 En dessous, un bloc « Options avancées », replié par défaut. Une fois ouvert, il permet de choisir
 la personne assignée (ou « Non assignée ») et le sprint (ou « Aucun », la feature reste dans le backlog).
 Si on n'ouvre pas les options avancées, la feature part automatiquement au statut « Backlog »,
@@ -66,8 +74,8 @@ On y voit : titre, description, priorité, effort, utilisateurs impactés, statu
 module (avec sa couleur), sprint (ou « Backlog »), personne assignée (ou « Non assignée »).
 Les cases « Sprint » et « Personne assignée » sont cliquables, même quand elles affichent
 « Backlog » ou « Non assignée ».
-En bas : tous les commentaires, du plus ancien au plus récent, avec l'auteur et la date,
-et sur chacun les boutons « Modifier » et « Supprimer ».
+En bas : tous les commentaires, du plus ancien au plus récent, avec la photo, l'auteur, la date et l'heure.
+Les boutons « Modifier » et « Supprimer » n'apparaissent que sur ses propres commentaires.
 On peut :
 - Cliquer sur la case « Personne assignée » → une petite liste s'ouvre : « Non assignée » puis les membres.
   Un clic sur un nom change la personne tout de suite (message « Assignée à … »).
@@ -76,9 +84,11 @@ On peut :
   Une feature qui sort du backlog passe au statut « À faire » ; une feature remise dans le backlog
   repasse au statut « Backlog » (sauf si elle est terminée ou annulée).
 - Écrire un commentaire et cliquer sur « Envoyer ».
-- « Modifier » un commentaire : son texte devient modifiable sur place, avec « Enregistrer »
-  (message « Commentaire modifié », la mention « modifié » s'ajoute à la date) et « Annuler ».
-- « Supprimer » un commentaire : une confirmation est demandée, puis le message « Commentaire supprimé » s'affiche.
+- « Modifier » un de ses commentaires : son texte devient modifiable sur place, avec « Enregistrer »
+  (message « Commentaire modifié ») et « Annuler ». La base n'enregistrant pas de date de modification,
+  aucune mention « modifié » n'est affichée.
+- « Supprimer » un de ses commentaires : une confirmation est demandée, puis le message « Commentaire supprimé » s'affiche.
+- Cliquer sur le module → Fiche module ; sur l'auteur d'un commentaire → Fiche profil.
 - Cliquer sur « Modifier » pour changer la feature.
 - Revenir au Dashboard.
 
@@ -87,17 +97,23 @@ On y voit la liste des modules : nom, couleur, description.
 On peut :
 - Cliquer sur « Nouveau module » → écran Nouveau module.
 - Cliquer sur un module → Fiche module.
-- « Modifier » ou « Supprimer » un module (suppression possible seulement s'il n'a plus aucune feature).
+- « Modifier » ou « Supprimer » un module (suppression possible seulement s'il n'a plus aucune feature ;
+  sinon une fenêtre « Suppression impossible » l'explique, avec « J'ai compris »).
 
 ### 5. Nouveau module (formulaire)
 On y voit les champs : nom, description, couleur.
-On peut : « Enregistrer » ou « Annuler ». Le même formulaire, déjà rempli, sert à modifier un module.
+La couleur se choisit parmi les pastilles du design system ; en modification, la couleur actuelle
+du module est proposée en premier si elle n'en fait pas partie.
+Deux modules ne peuvent pas avoir le même nom (un message d'erreur l'indique).
+On peut : « Enregistrer » (message « Module ajouté » ou « Module modifié ») ou « Annuler ».
+Le même formulaire, déjà rempli, sert à modifier un module.
 
 ### 6. Fiche module
 On y voit : nom, couleur, description, date de création (« Créé le … »),
 et la liste de ses features avec, pour chacune, son sprint ou « Backlog ».
 On peut :
 - Cliquer sur une feature → Fiche feature.
+- Cliquer sur « Modifier » (en haut) → formulaire du module déjà rempli.
 - Revenir à la liste des modules.
 
 ### 7. Sprints
@@ -115,7 +131,7 @@ On peut :
 - « Modifier » ou « Supprimer » un sprint (s'il contient des features, elles repartent dans le backlog).
 
 ### 8. Nouveau sprint (formulaire)
-On y voit les champs : objectif, date de début, date de fin.
+On y voit les champs : objectif, date de début, date de fin (tous obligatoires, la fin après le début).
 En dessous, un bloc « Options avancées », replié par défaut. Une fois ouvert, il liste les features du backlog
 (titre, module, priorité) avec une case à cocher : les features cochées sont mises dans ce sprint
 et passent au statut « À faire ».
@@ -133,14 +149,12 @@ On peut :
 - Revenir à la liste des sprints (« Tous les sprints »).
 
 ### 10. Équipe
-On y voit un tableau des membres : photo, prénom, nom, email, nombre de features assignées,
-et un bouton « Inviter un membre ».
+On y voit un tableau des membres : photo, prénom, nom, email, nombre de features assignées.
 On peut :
 - Cliquer sur une personne → Fiche profil.
-- Cliquer sur « Inviter un membre » → une petite fenêtre s'ouvre avec seulement un champ email,
-  et les boutons « Envoyer l'invitation » et « Annuler ».
-  « Envoyer l'invitation » affiche le message « Invitation envoyée à … » ; la personne reçoit un email
-  avec un lien vers l'écran Créer mon compte. Une adresse invalide ou déjà dans l'équipe affiche une erreur.
+Pas encore construit : le bouton « Inviter un membre ». L'envoi d'une invitation par email demande
+la clé service_role de Supabase côté serveur. En attendant, chaque membre crée son compte
+depuis l'écran Créer mon compte.
 
 ### 11. Fiche profil
 On y voit : photo, prénom, nom, email, et la liste des features assignées à cette personne.
@@ -149,20 +163,42 @@ et un bouton « Modifier ».
 On peut :
 - Cliquer sur une feature → Fiche feature.
 - Cliquer sur « Équipe » → écran Équipe.
-- Sur son propre profil, cliquer sur « Modifier » → une fenêtre s'ouvre pour changer sa photo,
+- Sur son propre profil, cliquer sur « Modifier » → une fenêtre s'ouvre pour changer sa photo
+  (image de 2 Mo au plus, enregistrée dans le bucket Supabase Storage « avatars »),
   son prénom, son nom et son email, avec « Enregistrer » (message « Profil modifié ») et « Annuler ».
+  Un nouvel email doit être confirmé avec le lien envoyé à cette adresse avant de servir à se connecter.
 
 ### 12. Connexion
 Écran sans menu du haut. On y voit : le logo, les champs email et mot de passe, le bouton « Se connecter ».
 On peut :
-- « Se connecter » → Dashboard. Un email invalide ou un mot de passe vide affiche une erreur sous le champ.
+- « Se connecter » → Dashboard. Un email invalide ou un mot de passe vide affiche une erreur sous le champ ;
+  un email ou un mot de passe incorrect affiche « Email ou mot de passe incorrect. ».
+- Cliquer sur « Créer mon compte » → écran Créer mon compte.
 
-### 13. Créer mon compte (lien reçu par email)
-Écran sans menu du haut, ouvert depuis le lien de l'email d'invitation.
-On y voit : qui a envoyé l'invitation et l'email pour lequel le compte sera créé,
-puis les champs prénom, nom, photo, mot de passe (8 caractères minimum), et le bouton « Rejoindre l'équipe ».
+### 13. Créer mon compte
+Écran sans menu du haut, ouvert depuis le lien « Créer mon compte » de l'écran Connexion.
+On y voit : les champs prénom, nom, email, mot de passe (8 caractères minimum), et le bouton « Rejoindre l'équipe ».
+La photo s'ajoute ensuite depuis sa fiche profil.
 On peut :
 - « Rejoindre l'équipe » → Dashboard, avec le message « Bienvenue dans l'équipe ! ».
+  Si la confirmation par email est activée dans Supabase : retour à l'écran Connexion avec un message,
+  puis le lien reçu par email ouvre le Dashboard.
+- Cliquer sur « Se connecter » → écran Connexion.
+
+## Pages privées
+Tous les écrans, sauf Connexion et Créer mon compte, demandent d'être connecté :
+sans connexion, on est renvoyé vers l'écran Connexion.
+
+## Adresses des écrans
+| Écran | Adresse |
+|---|---|
+| Dashboard | / |
+| Nouvelle feature / Modifier | /features/nouvelle, /features/[id]/modifier |
+| Fiche feature | /features/[id] |
+| Modules, Nouveau module, Fiche module | /modules, /modules/nouveau, /modules/[id] (modifier : /modules/[id]/modifier) |
+| Sprints, Nouveau sprint, Fiche sprint | /sprints, /sprints/nouveau, /sprints/[id] (modifier : /sprints/[id]/modifier) |
+| Équipe, Fiche profil | /equipe, /equipe/[id] |
+| Connexion, Créer mon compte | /connexion, /inscription |
 
 ## Parcours
 - Consulter les features d'un sprint : Dashboard → « Tous les sprints » (ou menu Sprints) → clic sur un sprint → Fiche sprint (liste des features).
@@ -180,8 +216,7 @@ On peut :
 - Créer un sprint avec des features du backlog : menu Sprints → « Nouveau sprint » → remplir → ouvrir « Options avancées » → cocher les features → « Enregistrer ».
 - Modifier un sprint : Fiche sprint → « Modifier » (ou écran Sprints → « Modifier » sur la ligne).
 - Retrouver un sprint : menu Sprints → filtrer par statut ou par période, trier par date ou par nombre de features.
-- Inviter un membre : menu Équipe → « Inviter un membre » → saisir l'email → « Envoyer l'invitation ».
-- Rejoindre l'équipe : email d'invitation → lien → Créer mon compte → remplir → « Rejoindre l'équipe » → Dashboard.
+- Rejoindre l'équipe : Connexion → « Créer mon compte » → remplir → « Rejoindre l'équipe » → Dashboard.
 - Se connecter : Connexion → email et mot de passe → « Se connecter » → Dashboard.
 - Modifier son profil : avatar en haut à droite → « Mon profil » → « Modifier ».
 - Se déconnecter : avatar en haut à droite → « Se déconnecter » → Connexion.
