@@ -110,6 +110,16 @@
   /* ---------- Ombre ----------
      Une seule ombre douce : cartes, menus déroulants et message de confirmation. */
   --shadow-carte: 0 8px 24px rgba(30, 27, 46, 0.06);
+
+  /* ---------- Animation ----------
+     Le message de confirmation monte légèrement en apparaissant → animate-toast-in */
+  --animate-toast-in: toast-in 0.25s ease-out;
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
 }
 
 /*
@@ -123,6 +133,11 @@
 
 /* ---------- Styles de base de toutes les pages ---------- */
 @layer base {
+  /* Fond grisé derrière les fenêtres (<dialog>) : noir doux à 40 %. */
+  dialog::backdrop {
+    background-color: rgba(30, 27, 46, 0.4);
+  }
+
   body {
     background-color: var(--color-fond);
     color: var(--color-noir-doux);

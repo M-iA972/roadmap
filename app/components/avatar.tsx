@@ -1,7 +1,10 @@
 import type { Tables } from "@/lib/supabase/database.types";
+import { cn } from "@/lib/utils";
 
 type AvatarProps = {
   person: Pick<Tables<"profiles">, "firstname" | "lastname" | "email" | "avatar_url">;
+  // « normal » : 32 px (tableaux, menu). « grand » : 64 px (fiche profil).
+  size?: "normal" | "grand";
 };
 
 // Initiales affichées quand la personne n'a pas de photo (ex. « Léa Martin » → « LM »).
@@ -11,14 +14,16 @@ function getInitials(person: AvatarProps["person"]): string {
   return (initials || person.email[0]).toUpperCase();
 }
 
-// Avatar rond de 32 px avec un contour blanc.
+// Avatar rond avec un contour blanc.
 // Il est décoratif (aria-hidden) : le nom de la personne est toujours écrit à côté.
-export function Avatar({ person }: AvatarProps) {
+export function Avatar({ person, size = "normal" }: AvatarProps) {
+  const sizeClasses = size === "grand" ? "size-16 text-[20px]" : "size-8 text-[13px]";
+
   if (person.avatar_url) {
     return (
       <span
         aria-hidden="true"
-        className="size-8 shrink-0 rounded-full border-2 border-blanc bg-cover bg-center"
+        className={cn("shrink-0 rounded-full border-2 border-blanc bg-cover bg-center", sizeClasses)}
         style={{ backgroundImage: `url("${person.avatar_url}")` }}
       />
     );
@@ -27,7 +32,10 @@ export function Avatar({ person }: AvatarProps) {
   return (
     <span
       aria-hidden="true"
-      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-blanc bg-violet-clair text-[13px] font-bold text-violet-clair-texte"
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-full border-2 border-blanc bg-violet-clair font-bold text-violet-clair-texte",
+        sizeClasses,
+      )}
     >
       {getInitials(person)}
     </span>
