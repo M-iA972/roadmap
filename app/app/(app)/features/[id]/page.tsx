@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Pencil } from "lucide-react";
+import { CommentsSection } from "@/components/comments/comments-section";
 import { FeatureStatusBadge } from "@/components/feature-status-badge";
 import { AssigneePicker, SprintPicker } from "@/components/features/feature-pickers";
 import { LoadingCard } from "@/components/loading-card";
@@ -89,6 +90,11 @@ async function FeatureDetail({ params }: { params: Promise<{ id: string }> }) {
         <SprintPicker featureId={feature.id} sprint={feature.sprint} sprints={sprints} />
         <AssigneePicker featureId={feature.id} assignee={feature.assignee} members={members} />
       </section>
+
+      {/* Les commentaires chargent à part : la fiche s'affiche sans les attendre. */}
+      <Suspense fallback={<LoadingCard label="Chargement des commentaires…" />}>
+        <CommentsSection featureId={feature.id} />
+      </Suspense>
     </>
   );
 }
