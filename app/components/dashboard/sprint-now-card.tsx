@@ -20,7 +20,10 @@ export async function SprintNowCard() {
       {sprint ? (
         <>
           <h2 id="sprint-now-title" className="mt-3 mb-2 text-titre-section">
-            {sprint.goal ?? "Sprint sans objectif"}
+            {/* Un clic sur le sprint en cours ouvre sa fiche. */}
+            <Link href={`/sprints/${sprint.id}`} className="hover:underline">
+              {sprint.goal ?? "Sprint sans objectif"}
+            </Link>
           </h2>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <SprintStatusBadge status={sprint.status} />

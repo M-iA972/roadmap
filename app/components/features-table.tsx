@@ -60,7 +60,13 @@ export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
 
           <span role="cell">
             {feature.sprint ? (
-              feature.sprint.goal ?? "Sprint sans objectif"
+              // Un clic sur le sprint ouvre la fiche sprint.
+              <Link
+                href={`/sprints/${feature.sprint.id}`}
+                className={cn(rowControl, "text-violet-electrique hover:underline")}
+              >
+                {feature.sprint.goal ?? "Sprint sans objectif"}
+              </Link>
             ) : (
               // Un clic sur « Backlog » applique le filtre Backlog.
               <Link

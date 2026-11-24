@@ -185,3 +185,84 @@ export async function getFeature(id: number): Promise<FeatureDetail | null> {
   const { modules, profiles, ...columns } = feature;
   return { ...columns, module: modules, assignee: profiles, sprint };
 }
+
+// Une ligne des listes de features des fiches sprint, module et profil.
+export type FeatureRow = Pick<Tables<"features">, "id" | "title" | "status" | "priority"> & {
+  module: Pick<Tables<"modules">, "id" | "name" | "color">;
+  assignee: Pick<
+    Tables<"profiles">,
+    "id" | "firstname" | "lastname" | "email" | "avatar_url"
+  > | null;
+  sprint: Pick<Tables<"sprints">, "id" | "goal"> | null;
+};
+
+// Le filtre de la liste : les features d'un sprint, d'un module ou d'une personne.
+type FeatureRowsFilter =
+  | { sprintId: number }
+  | { moduleId: number }
+  | { assignedTo: string };
+
+// Les features d'un sprint, d'un module ou assignées à une personne.
+export async function getFeatureRows(filter: FeatureRowsFilter): Promise<FeatureRow[]> {
+  const supabase = await createClient();
+
+  let featuresQuery = supabase
+    .from("features")
+    .select(
+      `id, title, status, priority, sprint_id,
+       modules ( id, name, color ),
+       profiles ( id, firstname, lastname, email, avatar_url )`,
+    )
+    .order("created_at", { ascending: false });
+
+  // « in » vérifie quelle forme a le filtre reçu.
+  if ("sprintId" in filter) featuresQuery = featuresQuery.eq("sprint_id", filter.sprintId);
+  if ("moduleId" in filter) featuresQuery = featuresQuery.eq("module_id", filter.moduleId);
+  if ("assignedTo" in filter) featuresQuery = featuresQuery.eq("assigned_to", filter.assignedTo);
+
+  // Les sprints sont lus à part (pas de clé étrangère, voir getDashboardFeatures).
+  const [featuresResult, sprintsResult] = await Promise.all([
+    featuresQuery,
+    supabase.from("sprints").select("id, goal"),
+  ]);
+  if (featuresResult.error) {
+    throw new Error(`Impossible de lire les features : ${featuresResult.error.message}`);
+  }
+  if (sprintsResult.error) {
+    throw new Error(`Impossible de lire les sprints : ${sprintsResult.error.message}`);
+  }
+
+  return featuresResult.data.map((feature) => ({
+    id: feature.id,
+    title: feature.title,
+    status: feature.status,
+    priority: feature.priority,
+    module: feature.modules,
+    assignee: feature.profiles,
+    sprint: sprintsResult.data.find((sprint) => sprint.id === feature.sprint_id) ?? null,
+  }));
+}
+
+// Les features du backlog (sans sprint, statut « Backlog »),
+// proposées à cocher dans le formulaire Nouveau sprint.
+export async function getBacklogFeatures(): Promise<ActionRequiredFeature[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("features")
+    .select("id, title, priority, modules ( id, name, color )")
+    .is("sprint_id", null)
+    .eq("status", "backlog")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Impossible de lire le backlog : ${error.message}`);
+  }
+
+  return data.map((feature) => ({
+    id: feature.id,
+    title: feature.title,
+    priority: feature.priority,
+    module: feature.modules,
+  }));
+}
