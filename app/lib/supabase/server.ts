@@ -3,9 +3,15 @@
 // quelle personne est connectée.
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "./database.types";
 
 export async function createClient() {
+  // Toute lecture ou écriture Supabase (session comprise) passe par ici, et Supabase utilise
+  // l'heure (Date.now) pour vérifier la session. Next.js ne peut pas la calculer à l'avance :
+  // on attend donc la vraie requête avant de commencer. Un seul endroit pour toute l'app.
+  await connection();
+
   // cookies() est asynchrone dans cette version de Next.js : on l'attend.
   const cookieStore = await cookies();
 

@@ -25,10 +25,13 @@ export function Avatar({ person, size = "normal" }: AvatarProps) {
   const sizeClasses = SIZE_CLASSES[size];
 
   if (person.avatar_url) {
+    // inline-block : un <span> est « inline » par défaut, et une largeur / hauteur ne s'applique pas
+    // à un élément inline. Sans cela, la photo disparaît quand son parent n'est pas un flex
+    // (cellule de tableau, bouton). Les initiales, elles, sont déjà en inline-flex.
     return (
       <span
         aria-hidden="true"
-        className={cn("shrink-0 rounded-full border-2 border-blanc bg-cover bg-center", sizeClasses)}
+        className={cn("inline-block shrink-0 rounded-full border-2 border-blanc bg-cover bg-center", sizeClasses)}
         style={{ backgroundImage: `url("${person.avatar_url}")` }}
       />
     );

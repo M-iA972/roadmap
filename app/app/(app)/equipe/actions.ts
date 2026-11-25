@@ -7,6 +7,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { profileSchema } from "@/lib/schemas/profile";
 import { createClient } from "@/lib/supabase/server";
 
+// L'adresse de la photo doit pointer vers le dossier de la personne connectée
+// dans le bucket « avatars » : avatars/<son id>/profile.<extension>.
+function isMyAvatarUrl(userId: string, avatarUrl: string): boolean {
+  const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${userId}/profile.`;
+  return avatarUrl.startsWith(prefix);
+}
+
 // Ce que renvoie l'action : une erreur, ou le message à afficher.
 export type ProfileActionResult = { error: string } | { message: string };
 
@@ -24,8 +31,7 @@ export async function updateMyProfile(
   const { firstname, lastname, email } = parsed.data;
 
   // La photo doit être dans le dossier de la personne connectée, dans le bucket « avatars ».
-  const avatarFolder = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${user.id}/`;
-  if (avatarUrl !== null && !avatarUrl.startsWith(avatarFolder)) {
+  if (avatarUrl !== null && !isMyAvatarUrl(user.id, avatarUrl)) {
     return { error: "Photo invalide." };
   }
 
@@ -44,7 +50,7 @@ export async function updateMyProfile(
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({
       firstname,
@@ -53,7 +59,8 @@ export async function updateMyProfile(
       // Sans nouvelle photo, on ne touche pas à la colonne avatar_url.
       ...(avatarUrl !== null && { avatar_url: avatarUrl }),
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("id");
 
   // 23505 : la colonne profiles.email est unique.
   if (error?.code === "23505") {
@@ -61,6 +68,10 @@ export async function updateMyProfile(
   }
   if (error) {
     return { error: "Le profil n'a pas pu être modifié. Réessayez." };
+  }
+  // La RLS refuse sans erreur : la base touche alors 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de modifier ce profil." };
   }
 
   // Le nom et la photo apparaissent partout (menu, tableaux…) : on rafraîchit toutes les pages.
@@ -70,4 +81,31 @@ export async function updateMyProfile(
       ? "Profil modifié : confirmez le nouvel email avec le lien reçu"
       : "Profil modifié",
   };
+}
+
+// Changer seulement sa photo (clic sur l'avatar). La photo est déjà envoyée dans Storage
+// par le navigateur : ici on enregistre son adresse dans profiles.avatar_url.
+export async function updateMyAvatar(avatarUrl: string): Promise<ProfileActionResult> {
+  const user = await getCurrentUser(); // l'id vient de la session, jamais du navigateur
+  if (!isMyAvatarUrl(user.id, avatarUrl)) {
+    return { error: "Photo invalide." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", user.id)
+    .select("id");
+
+  if (error) {
+    return { error: "La photo n'a pas pu être enregistrée. Réessayez." };
+  }
+  // La RLS refuse sans erreur : la base touche alors 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de modifier cette photo." };
+  }
+
+  revalidatePath("/", "layout");
+  return { message: "Photo modifiée" };
 }
