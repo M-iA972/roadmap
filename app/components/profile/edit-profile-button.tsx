@@ -14,15 +14,8 @@ import { useToast } from "@/components/toast";
 import type { CurrentUser } from "@/lib/auth";
 import { buttonClasses } from "@/lib/button-styles";
 import { inputClasses } from "@/lib/form-styles";
-import { AVATAR_MAX_SIZE, profileSchema, type ProfileValues } from "@/lib/schemas/profile";
-import { createClient } from "@/lib/supabase/client";
-
-// Chemin de la photo dans le bucket : avatars/<id de la personne>/<date>.<extension>.
-// La date rend le nom unique : une nouvelle photo ne remplace jamais l'ancienne en cache.
-function avatarPath(userId: string, photo: File): string {
-  const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
-  return `${userId}/${Date.now()}.${extension}`;
-}
+import { AVATAR_ACCEPT, checkAvatarFile, uploadAvatar } from "@/lib/avatar-upload";
+import { profileSchema, type ProfileValues } from "@/lib/schemas/profile";
 
 // Bouton « Modifier » de sa propre fiche profil.
 export function EditProfileButton({ user }: { user: CurrentUser }) {
@@ -73,12 +66,10 @@ function EditProfileForm({ user, onDone }: { user: CurrentUser; onDone: () => vo
   function choosePhoto(file: File | undefined) {
     setPhotoError(null);
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setPhotoError("Choisissez une image (JPG ou PNG).");
-      return;
-    }
-    if (file.size > AVATAR_MAX_SIZE) {
-      setPhotoError("La photo doit faire 2 Mo au plus.");
+    // Même contrôle que l'avatar cliquable : JPG, PNG ou WebP, 2 Mo au plus.
+    const problem = checkAvatarFile(file);
+    if (problem) {
+      setPhotoError(problem);
       return;
     }
     setPhoto(file);
@@ -88,19 +79,15 @@ function EditProfileForm({ user, onDone }: { user: CurrentUser; onDone: () => vo
   async function onSubmit(values: ProfileValues) {
     // 1. La photo part directement du navigateur vers Supabase Storage
     //    (une Server Action est limitée à 1 Mo, trop peu pour une photo).
-    //    Elle est rangée dans le dossier de la personne : avatars/<son id>/<date>.jpg
+    //    Elle est rangée dans le dossier de la personne : avatars/<son id>/profile.<extension>
     let avatarUrl: string | null = null;
     if (photo) {
-      const supabase = createClient();
-      const path = avatarPath(user.id, photo);
-
-      const { error } = await supabase.storage.from("avatars").upload(path, photo);
-      if (error) {
-        setPhotoError("La photo n'a pas pu être envoyée. Réessayez.");
+      const upload = await uploadAvatar(user.id, photo);
+      if ("error" in upload) {
+        setPhotoError(upload.error);
         return;
       }
-      // Le bucket est public : la photo a une adresse fixe, lisible par tous.
-      avatarUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      avatarUrl = upload.url;
     }
 
     // 2. Le prénom, le nom, l'email et l'adresse de la photo sont enregistrés par le serveur.
@@ -143,13 +130,13 @@ function EditProfileForm({ user, onDone }: { user: CurrentUser; onDone: () => vo
               Choisir une photo
               <input
                 type="file"
-                accept="image/*"
+                accept={AVATAR_ACCEPT}
                 className="sr-only"
                 onChange={(event) => choosePhoto(event.target.files?.[0])}
               />
             </label>
             <span className={photoError ? "text-petit text-rouge-cerise" : "text-petit text-gris-texte"} role={photoError ? "alert" : undefined}>
-              {photoError ?? photo?.name ?? "JPG ou PNG, carrée de préférence, 2 Mo au plus."}
+              {photoError ?? photo?.name ?? "JPG, PNG ou WebP, carrée de préférence, 2 Mo au plus."}
             </span>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Avatar, getFullName } from "@/components/avatar";
 import { FeatureList } from "@/components/feature-list";
 import { LoadingCard } from "@/components/loading-card";
 import { PageHeader } from "@/components/page-header";
+import { AvatarUploadButton } from "@/components/profile/avatar-upload-button";
 import { EditProfileButton } from "@/components/profile/edit-profile-button";
 import { getCurrentUser } from "@/lib/auth";
 import { getFeatureRows } from "@/lib/data/features";
@@ -49,7 +50,8 @@ async function ProfileDetail({ params }: { params: Promise<{ id: string }> }) {
 
       <section className="mb-entre-sections rounded-carte bg-blanc p-carte shadow-carte">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <Avatar person={member} size="tres-grand" />
+          {/* Sur son propre profil, un clic sur l'avatar permet de changer la photo. */}
+          {isMe ? <AvatarUploadButton user={currentUser} /> : <Avatar person={member} size="tres-grand" />}
           {/* Trois lignes : nom, email, rôle (lecture seule : le rôle ne se modifie pas ici) */}
           <div className="flex flex-col items-start gap-2">
             <h1 className="text-titre-page">{getFullName(member)}</h1>
