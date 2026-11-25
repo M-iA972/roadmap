@@ -178,9 +178,9 @@ En haut de chaque page : logo « Roadmap » à gauche, puis Dashboard, Sprints, 
 Lien actif : pilule rose fuchsia, texte blanc.
 
 ### Avatar
-Photo ronde (32 px dans les tableaux, 64 px sur la fiche profil), contour blanc 2 px.
+Photo ronde (32 px dans les tableaux, 80 px dans l'en-tête de la fiche profil), contour blanc 2 px.
 Sans photo : initiales sur fond violet clair (#EDE7FF, texte #5A3FD6, les couleurs du badge « Planification »),
-13 px gras dans les tableaux, 20 px gras sur la fiche profil.
+13 px gras dans les tableaux, 24 px gras dans l'en-tête de la fiche profil.
 
 ### Message de confirmation
 Petite pilule en bas de l'écran pendant 3 secondes :

@@ -9,6 +9,9 @@ import { EditProfileButton } from "@/components/profile/edit-profile-button";
 import { getCurrentUser } from "@/lib/auth";
 import { getFeatureRows } from "@/lib/data/features";
 import { getMember } from "@/lib/data/profiles";
+import { ROLES, labelOf } from "@/lib/labels";
+import { isAdmin } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Fiche profil · Roadmap",
@@ -46,13 +49,27 @@ async function ProfileDetail({ params }: { params: Promise<{ id: string }> }) {
 
       <section className="mb-entre-sections rounded-carte bg-blanc p-carte shadow-carte">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <Avatar person={member} size="grand" />
-          <div>
-            <h1 className="mb-2 text-titre-page">{getFullName(member)}</h1>
+          <Avatar person={member} size="tres-grand" />
+          {/* Trois lignes : nom, email, rôle (lecture seule : le rôle ne se modifie pas ici) */}
+          <div className="flex flex-col items-start gap-2">
+            <h1 className="text-titre-page">{getFullName(member)}</h1>
             <a href={`mailto:${member.email}`} className="text-violet-electrique hover:underline">
               {member.email}
             </a>
-            {isMe && <p className="mt-1 text-petit text-gris-texte">C&apos;est vous</p>}
+            <p className="flex items-center gap-2">
+              <span className="sr-only">Rôle :</span>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-pilule px-3 py-1 text-libelle",
+                  isAdmin(member)
+                    ? "bg-violet-clair text-violet-clair-texte"
+                    : "bg-statut-backlog text-statut-backlog-texte",
+                )}
+              >
+                {labelOf(ROLES, member.role)}
+              </span>
+              {isMe && <span className="text-petit text-gris-texte">C&apos;est vous</span>}
+            </p>
           </div>
         </div>
       </section>
@@ -64,7 +81,7 @@ async function ProfileDetail({ params }: { params: Promise<{ id: string }> }) {
             {features.length} feature{features.length > 1 ? "s" : ""}
           </span>
         </div>
-        <FeatureList features={features} columns={["module", "sprint", "status", "priority"]} />
+        <FeatureList features={features} columns={["module", "sprint", "status", "priority"]} currentUser={currentUser} />
       </section>
     </>
   );

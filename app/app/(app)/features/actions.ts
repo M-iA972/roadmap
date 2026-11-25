@@ -84,11 +84,12 @@ export async function updateFeature(id: number, values: unknown): Promise<Action
   }
 
   refreshAllPages();
-  redirect(withMessage("/", "Feature modifiée"));
+  redirect(withMessage(`/features/${id}`, "Feature modifiée"));
 }
 
 // Suppression d'une feature et de ses commentaires.
-export async function deleteFeature(id: number): Promise<ActionResult> {
+// backToDashboard : depuis la fiche feature, on retourne au Dashboard (la fiche n'existe plus).
+export async function deleteFeature(id: number, backToDashboard = false): Promise<ActionResult> {
   await getCurrentUser();
   const supabase = await createClient();
 
@@ -99,12 +100,19 @@ export async function deleteFeature(id: number): Promise<ActionResult> {
     return { error: "Les commentaires de la feature n'ont pas pu être supprimés." };
   }
 
-  const { error } = await supabase.from("features").delete().eq("id", id);
+  const { data, error } = await supabase.from("features").delete().eq("id", id).select("id");
   if (error) {
     return { error: "La feature n'a pas pu être supprimée. Réessayez." };
   }
+  // RLS : si la base refuse l'action, elle ne renvoie pas d'erreur mais touche 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de faire cette action." };
+  }
 
   refreshAllPages();
+  if (backToDashboard) {
+    redirect(withMessage("/", "Feature supprimée"));
+  }
 }
 
 // Fenêtre « Assigner » du Dashboard : une personne et un sprint.
@@ -117,17 +125,22 @@ export async function assignFeature(id: number, values: unknown): Promise<Action
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("features")
     .update({
       assigned_to: parsed.data.assignedTo,
       sprint_id: Number(parsed.data.sprintId),
       status: "todo",
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) {
     return { error: "La feature n'a pas pu être assignée. Réessayez." };
+  }
+  // RLS : si la base refuse l'action, elle ne renvoie pas d'erreur mais touche 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de faire cette action." };
   }
   refreshAllPages();
 }
@@ -140,13 +153,18 @@ export async function changeFeatureAssignee(
   await getCurrentUser();
   const supabase = await createClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("features")
     .update({ assigned_to: assignedTo })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) {
     return { error: "La personne assignée n'a pas pu être changée." };
+  }
+  // RLS : si la base refuse l'action, elle ne renvoie pas d'erreur mais touche 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de faire cette action." };
   }
   refreshAllPages();
 }
@@ -179,13 +197,18 @@ export async function changeFeatureSprint(
     status = "todo";
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("features")
     .update({ sprint_id: sprintId, status })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) {
     return { error: "Le sprint n'a pas pu être changé." };
+  }
+  // RLS : si la base refuse l'action, elle ne renvoie pas d'erreur mais touche 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de faire cette action." };
   }
   refreshAllPages();
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FeaturesTable } from "@/components/features-table";
 import { FilterMenu } from "@/components/filter-menu";
+import { SearchForm } from "@/components/dashboard/search-form";
 import { Pagination } from "@/components/pagination";
 import {
   PAGE_SIZE,
@@ -9,6 +10,7 @@ import {
   parseDashboardFilters,
   type DashboardScope,
 } from "@/lib/dashboard-filters";
+import { getCurrentUser } from "@/lib/auth";
 import { getDashboardFeatures } from "@/lib/data/features";
 import { getModulesWithFeatureCount } from "@/lib/data/modules";
 import { getAllSprintOptions } from "@/lib/data/sprints";
@@ -31,11 +33,12 @@ type FeaturesSectionProps = {
 export async function FeaturesSection({ searchParams }: FeaturesSectionProps) {
   const filters = parseDashboardFilters(await searchParams);
 
-  const [{ features, total }, modules, sprints] = await Promise.all([
+  const [{ features, total }, modules, sprints, currentUser] = await Promise.all([
     getDashboardFeatures(filters),
     getModulesWithFeatureCount(),
     // Tous les sprints, même terminés : on peut vouloir revoir ce qu'ils contenaient.
     getAllSprintOptions(),
+    getCurrentUser(),
   ]);
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -121,6 +124,9 @@ export async function FeaturesSection({ searchParams }: FeaturesSectionProps) {
         />
       </div>
 
+      {/* Recherche par titre : un formulaire GET, qui garde les autres filtres de l'URL */}
+      <SearchForm filters={filters} clearHref={changeFilter(filters, { search: "" })} />
+
       {/* Une page au-delà de la dernière (ex. après une suppression) */}
       {features.length === 0 && filters.page > 1 ? (
         <p className="rounded-carte bg-blanc p-carte text-center text-gris-texte">
@@ -133,6 +139,7 @@ export async function FeaturesSection({ searchParams }: FeaturesSectionProps) {
         <FeaturesTable
           features={features}
           backlogHref={changeFilter(filters, { scope: "backlog", sprintId: null })}
+          currentUser={currentUser}
         />
       )}
 

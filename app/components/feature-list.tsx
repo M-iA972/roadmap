@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Avatar, getFullName } from "@/components/avatar";
+import { FeatureRowActions } from "@/components/features/feature-row-actions";
 import { FeatureStatusBadge } from "@/components/feature-status-badge";
 import { ModuleBadge } from "@/components/module-badge";
 import { PriorityBadge } from "@/components/priority-badge";
+import type { CurrentUser } from "@/lib/auth";
 import type { FeatureRow } from "@/lib/data/features";
+import { canEditFeature } from "@/lib/permissions";
 import { rowControl, stretchedLink } from "@/lib/row-link";
 import { cn } from "@/lib/utils";
 
@@ -60,11 +63,13 @@ const COLUMNS: Record<Column, { header: string; width: string; cell: (feature: F
 type FeatureListProps = {
   features: FeatureRow[];
   columns: Column[]; // ex. ["module", "assignee", "status", "priority"]
+  // Si on le donne, chaque ligne ajoute « Modifier » et « Supprimer » (selon canEditFeature).
+  currentUser?: Pick<CurrentUser, "id" | "role">;
 };
 
 // Liste de features des fiches sprint, module et profil.
 // Chaque ligne est une carte blanche ; un clic sur la ligne ouvre la fiche feature.
-export function FeatureList({ features, columns }: FeatureListProps) {
+export function FeatureList({ features, columns, currentUser }: FeatureListProps) {
   if (features.length === 0) {
     return (
       <p className="rounded-carte bg-blanc p-carte text-center text-gris-texte">
@@ -75,7 +80,10 @@ export function FeatureList({ features, columns }: FeatureListProps) {
 
   // La grille : le titre (2 parts) puis les colonnes choisies.
   // La largeur dépend des colonnes : style en ligne (variable CSS --cols).
-  const grid = ["minmax(0,2fr)", ...columns.map((column) => COLUMNS[column].width)].join(" ");
+  // Avec currentUser, une dernière colonne de 232 px accueille les boutons.
+  const widths = ["minmax(0,2fr)", ...columns.map((column) => COLUMNS[column].width)];
+  if (currentUser) widths.push("232px");
+  const grid = widths.join(" ");
   // React ne connaît pas les variables CSS : on ajoute « --cols » au type des styles.
   const gridStyle: React.CSSProperties & { "--cols": string } = { "--cols": grid };
   const rowClasses =
@@ -90,6 +98,7 @@ export function FeatureList({ features, columns }: FeatureListProps) {
             {COLUMNS[column].header}
           </span>
         ))}
+        {currentUser && <span role="columnheader" className="sr-only">Actions</span>}
       </div>
 
       {features.map((feature) => (
@@ -111,6 +120,13 @@ export function FeatureList({ features, columns }: FeatureListProps) {
               {COLUMNS[column].cell(feature)}
             </span>
           ))}
+          {currentUser && (
+            <span role="cell" className="flex gap-1 md:justify-end">
+              {canEditFeature(currentUser, feature.assignee?.id ?? null) && (
+                <FeatureRowActions featureId={feature.id} featureTitle={feature.title} />
+              )}
+            </span>
+          )}
         </div>
       ))}
     </div>

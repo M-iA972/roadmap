@@ -43,6 +43,12 @@ export const SPRINT_STATUSES = [
   { value: "completed", label: "Terminé" },
 ] as const;
 
+// profiles.role
+export const ROLES = [
+  { value: "admin", label: "Admin" },
+  { value: "user", label: "Membre" },
+] as const;
+
 // Le libellé d'une valeur : labelOf(PRIORITIES, "high") → "Haute".
 // Valeur inconnue ou vide : on renvoie la valeur telle quelle (ou « — »).
 export function labelOf(list: readonly { value: string; label: string }[], value: string | null): string {

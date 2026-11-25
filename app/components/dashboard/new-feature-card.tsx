@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
 import { buttonClasses } from "@/lib/button-styles";
+import { isAdmin } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-// Section 3 du Dashboard : bloc « Nouvelle feature ».
-export function NewFeatureCard() {
+// Section 3 du Dashboard : bloc « Nouvelle feature », réservé aux admins.
+export async function NewFeatureCard() {
+  const user = await getCurrentUser();
+  if (!isAdmin(user)) {
+    return null;
+  }
+
   return (
     <section
       aria-labelledby="new-feature-title"

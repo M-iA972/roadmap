@@ -87,9 +87,13 @@ export async function deleteModule(id: number): Promise<ActionResult> {
     return { error: "Ce module contient encore des features : déplacez-les ou supprimez-les d'abord." };
   }
 
-  const { error } = await supabase.from("modules").delete().eq("id", id);
+  const { data, error } = await supabase.from("modules").delete().eq("id", id).select("id");
   if (error) {
     return { error: "Le module n'a pas pu être supprimé. Réessayez." };
+  }
+  // RLS : si la base refuse l'action, elle ne renvoie pas d'erreur mais touche 0 ligne.
+  if (!data || data.length === 0) {
+    return { error: "Vous n'avez pas le droit de faire cette action." };
   }
 
   revalidatePath("/", "layout");

@@ -5,16 +5,19 @@ import { Suspense } from "react";
 import { Pencil } from "lucide-react";
 import { CommentsSection } from "@/components/comments/comments-section";
 import { FeatureStatusBadge } from "@/components/feature-status-badge";
+import { DeleteFeatureButton } from "@/components/features/delete-feature-button";
 import { AssigneePicker, SprintPicker } from "@/components/features/feature-pickers";
 import { LoadingCard } from "@/components/loading-card";
 import { PageHeader } from "@/components/page-header";
 import { PriorityBadge } from "@/components/priority-badge";
+import { getCurrentUser } from "@/lib/auth";
 import { buttonClasses } from "@/lib/button-styles";
 import { getFeature } from "@/lib/data/features";
 import { getMembers } from "@/lib/data/profiles";
 import { getSprintOptions } from "@/lib/data/sprints";
 import { EFFORTS, IMPACTS, labelOf } from "@/lib/labels";
 import { parseId } from "@/lib/params";
+import { canEditFeature } from "@/lib/permissions";
 
 export const metadata: Metadata = {
   title: "Fiche feature · Roadmap",
@@ -39,7 +42,11 @@ async function FeatureDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   // Les listes des deux cases cliquables.
-  const [members, sprints] = await Promise.all([getMembers(), getSprintOptions(feature.sprint_id)]);
+  const [members, sprints, currentUser] = await Promise.all([
+    getMembers(),
+    getSprintOptions(feature.sprint_id),
+    getCurrentUser(),
+  ]);
 
   return (
     <>
@@ -47,10 +54,21 @@ async function FeatureDetail({ params }: { params: Promise<{ id: string }> }) {
         backHref="/"
         backLabel="Dashboard"
         action={
-          <Link href={`/features/${feature.id}/modifier`} className={buttonClasses("secondaire")}>
-            <Pencil aria-hidden="true" />
-            Modifier
-          </Link>
+          // Admin, ou personne assignée à la feature.
+          canEditFeature(currentUser, feature.assigned_to) ? (
+            <div className="flex gap-2">
+              <Link href={`/features/${feature.id}/modifier`} className={buttonClasses("secondaire")}>
+                <Pencil aria-hidden="true" />
+                Modifier
+              </Link>
+              <DeleteFeatureButton
+                featureId={feature.id}
+                featureTitle={feature.title}
+                size="normal"
+                backToDashboard
+              />
+            </div>
+          ) : undefined
         }
       />
 

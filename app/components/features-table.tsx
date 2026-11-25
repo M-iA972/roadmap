@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
 import { Avatar, getFullName } from "@/components/avatar";
-import { DeleteFeatureButton } from "@/components/features/delete-feature-button";
+import { FeatureRowActions } from "@/components/features/feature-row-actions";
 import { ModuleBadge } from "@/components/module-badge";
-import { buttonClasses } from "@/lib/button-styles";
+import type { CurrentUser } from "@/lib/auth";
 import type { DashboardFeature } from "@/lib/data/features";
+import { canEditFeature } from "@/lib/permissions";
 import { rowControl, stretchedLink } from "@/lib/row-link";
 import { cn } from "@/lib/utils";
 
 type FeaturesTableProps = {
   features: DashboardFeature[];
   backlogHref: string; // adresse du Dashboard avec le filtre « Backlog »
+  currentUser: Pick<CurrentUser, "id" | "role">; // décide qui voit « Modifier » et « Supprimer »
 };
 
 // Les 5 colonnes du tableau (la dernière : Modifier / Supprimer). La même grille sert à l'en-tête et aux lignes
@@ -21,7 +22,7 @@ const columns =
 // Tableau des features (design system : chaque ligne est une carte blanche arrondie).
 // On utilise des <div> pour la mise en page en grille, avec les rôles ARIA d'un tableau
 // pour que les lecteurs d'écran le lisent comme un vrai tableau.
-export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
+export function FeaturesTable({ features, backlogHref, currentUser }: FeaturesTableProps) {
   if (features.length === 0) {
     return (
       <p className="rounded-carte bg-blanc p-carte text-center text-gris-texte">
@@ -97,19 +98,11 @@ export function FeaturesTable({ features, backlogHref }: FeaturesTableProps) {
             )}
           </span>
 
+          {/* Admin, ou personne assignée à la feature. La case reste là (vide) pour garder la grille alignée. */}
           <span role="cell" className="flex gap-1 md:justify-end">
-            <Link
-              href={`/features/${feature.id}/modifier`}
-              className={cn(rowControl, buttonClasses("secondaire", "petit"))}
-            >
-              <Pencil aria-hidden="true" />
-              Modifier
-            </Link>
-            <DeleteFeatureButton
-              featureId={feature.id}
-              featureTitle={feature.title}
-              className={rowControl}
-            />
+            {canEditFeature(currentUser, feature.assignee?.id ?? null) && (
+              <FeatureRowActions featureId={feature.id} featureTitle={feature.title} />
+            )}
           </span>
         </div>
       ))}

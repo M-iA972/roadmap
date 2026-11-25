@@ -1,5 +1,5 @@
 // Filtres et page du tableau des features du Dashboard.
-// Ils sont rangés dans l'URL : /?filter=backlog&module=3&status=todo&page=2
+// Ils sont rangés dans l'URL : /?filter=backlog&module=3&status=todo&q=export&page=2
 // Avantage : le serveur les lit pour filtrer en base, et on peut partager le lien.
 
 // « all » = toutes, « sprint » = en sprint, « backlog » = sans sprint.
@@ -10,6 +10,7 @@ export type DashboardFilters = {
   moduleId: number | null; // null = tous les modules
   sprintId: number | null; // null = tous les sprints
   status: string | null; // valeur de features.status, null = tous les statuts
+  search: string; // texte cherché dans le titre, "" = pas de recherche
   page: number; // numéro de page, à partir de 1
 };
 
@@ -18,6 +19,9 @@ export const PAGE_SIZE = 10;
 
 // Statuts acceptés dans l'URL (contrainte CHECK de features.status).
 const STATUS_VALUES = ["backlog", "todo", "in_progress", "done", "cancelled"];
+
+// Longueur maximale du texte cherché.
+const SEARCH_MAX_LENGTH = 100;
 
 // Les paramètres d'URL tels que Next.js les donne à une page.
 type SearchParams = { [key: string]: string | string[] | undefined };
@@ -35,12 +39,14 @@ export function parseDashboardFilters(searchParams: SearchParams): DashboardFilt
     filter === "sprint" || filter === "backlog" ? filter : "all";
 
   const status = searchParams.status;
+  const search = searchParams.q;
 
   return {
     scope,
     moduleId: positiveInteger(searchParams.module),
     sprintId: positiveInteger(searchParams.sprint),
     status: typeof status === "string" && STATUS_VALUES.includes(status) ? status : null,
+    search: typeof search === "string" ? search.trim().slice(0, SEARCH_MAX_LENGTH) : "",
     page: positiveInteger(searchParams.page) ?? 1,
   };
 }
@@ -53,6 +59,7 @@ export function dashboardHref(filters: DashboardFilters): string {
   if (filters.moduleId !== null) params.set("module", String(filters.moduleId));
   if (filters.sprintId !== null) params.set("sprint", String(filters.sprintId));
   if (filters.status !== null) params.set("status", filters.status);
+  if (filters.search !== "") params.set("q", filters.search);
   if (filters.page > 1) params.set("page", String(filters.page));
 
   const query = params.toString();

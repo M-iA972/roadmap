@@ -62,6 +62,13 @@ export async function getDashboardFeatures(
     featuresQuery = featuresQuery.eq("status", filters.status);
   }
 
+  // Recherche par titre. % et _ sont des jokers de ilike : on les neutralise (avec une barre oblique inverse)
+  // pour que « 100% » cherche bien le texte « 100% ».
+  if (filters.search !== "") {
+    const escaped = filters.search.replace(/[\\%_]/g, "\\$&");
+    featuresQuery = featuresQuery.ilike("title", `%${escaped}%`);
+  }
+
   // Pagination : seulement les lignes de la page demandée.
   // Page 1 → lignes 0 à 9, page 2 → lignes 10 à 19… (range inclut les deux bornes).
   const from = (filters.page - 1) * PAGE_SIZE;

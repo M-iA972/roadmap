@@ -226,7 +226,11 @@ export function FeatureForm({ featureId, defaultValues, modules, members, sprint
 
       <div className="mt-8 flex justify-end gap-2 border-t border-gris-bordure pt-6">
         <Link
-          href={withMessage("/", isEdit ? "Modification annulée" : "Ajout annulé")}
+          href={
+            isEdit
+              ? withMessage(`/features/${featureId}`, "Modification annulée") // retour sur la fiche
+              : withMessage("/", "Ajout annulé")
+          }
           className={buttonClasses("discret")}
         >
           Annuler

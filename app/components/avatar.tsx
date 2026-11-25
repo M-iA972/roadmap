@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 type AvatarProps = {
   person: Pick<Tables<"profiles">, "firstname" | "lastname" | "email" | "avatar_url">;
-  // « normal » : 32 px (tableaux, menu). « grand » : 64 px (fiche profil).
-  size?: "normal" | "grand";
+  // « normal » : 32 px (tableaux, menu). « grand » : 64 px. « tres-grand » : 80 px (en-tête de la fiche profil).
+  size?: "normal" | "grand" | "tres-grand";
 };
 
 // Initiales affichées quand la personne n'a pas de photo (ex. « Léa Martin » → « LM »).
@@ -17,7 +17,12 @@ function getInitials(person: AvatarProps["person"]): string {
 // Avatar rond avec un contour blanc.
 // Il est décoratif (aria-hidden) : le nom de la personne est toujours écrit à côté.
 export function Avatar({ person, size = "normal" }: AvatarProps) {
-  const sizeClasses = size === "grand" ? "size-16 text-[20px]" : "size-8 text-[13px]";
+  const SIZE_CLASSES = {
+    normal: "size-8 text-[13px]",
+    grand: "size-16 text-[20px]",
+    "tres-grand": "size-20 text-[24px]",
+  };
+  const sizeClasses = SIZE_CLASSES[size];
 
   if (person.avatar_url) {
     return (

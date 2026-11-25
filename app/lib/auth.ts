@@ -8,7 +8,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 
 export type CurrentUser = Pick<
   Tables<"profiles">,
-  "id" | "firstname" | "lastname" | "email" | "avatar_url"
+  "id" | "firstname" | "lastname" | "email" | "avatar_url" | "role"
 >;
 
 // Renvoie le profil de la personne connectée.
@@ -27,7 +27,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
   // on_auth_user_created de la base (table profiles, même id que auth.users).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, firstname, lastname, email, avatar_url")
+    .select("id, firstname, lastname, email, avatar_url, role")
     .eq("id", data.user.id)
     .maybeSingle();
 

@@ -44,12 +44,15 @@ export async function getMembersWithFeatureCount(): Promise<MemberWithCount[]> {
   }));
 }
 
+// Un membre avec son rôle (« admin » ou « user »), pour la fiche profil.
+export type MemberDetail = Member & Pick<Tables<"profiles">, "role">;
+
 // Un membre par son id, ou null s'il n'existe pas.
-export async function getMember(id: string): Promise<Member | null> {
+export async function getMember(id: string): Promise<MemberDetail | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, firstname, lastname, email, avatar_url")
+    .select("id, firstname, lastname, email, avatar_url, role")
     .eq("id", id)
     .maybeSingle();
 
