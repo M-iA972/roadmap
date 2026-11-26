@@ -1,14 +1,16 @@
 -- =============================================================================
--- Roadmap : schéma initial
+-- Roadmap : schéma initial (0001_init)
 -- =============================================================================
--- Recrée, sur une base Supabase vide, la structure de la base créée à la main
--- dans le dashboard : tables, contraintes, fonction et trigger de création des
--- profils, bucket Storage des photos.
+-- Ce fichier est la structure de départ de la base, telle qu'elle existe
+-- avant les policies RLS du J7 : tables, contraintes, fonction et trigger de
+-- création des profils, bucket Storage des photos.
+-- La Row Level Security n'y est pas encore activée : les policies RLS seront
+-- ajoutées au J7, dans de nouveaux fichiers de migration.
 -- Structure uniquement : aucune donnée, aucune clé, aucun secret.
 --
 -- ATTENTION : la base en ligne contient déjà tout cela. Ce fichier ne doit pas
 -- y être exécuté. Pour que la CLI Supabase le considère comme déjà appliqué :
---   supabase migration repair --status applied 20261124161227
+--   supabase migration repair --status applied 0001
 -- =============================================================================
 
 
